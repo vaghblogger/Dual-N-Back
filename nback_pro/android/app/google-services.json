@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "670704004442",
+    "project_id": "infinite-puzzle-e5852",
+    "storage_bucket": "infinite-puzzle-e5852.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:670704004442:android:431f964f46401f72d01763",
+        "android_client_info": {
+          "package_name": "com.neuroforge.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "670704004442-kqu5ljrhhieq6j6u57aocldkupqmgq8j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAEXyyE9f-ZaoWblmlXT__NbjehZldET9U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "670704004442-kqu5ljrhhieq6j6u57aocldkupqmgq8j.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
