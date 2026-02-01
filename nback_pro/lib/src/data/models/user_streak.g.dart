@@ -19,17 +19,20 @@ class UserStreakAdapter extends TypeAdapter<UserStreak> {
     return UserStreak(
       currentStreak: fields[0] as int,
       lastCompletedDate: fields[1] as DateTime?,
+      longestStreak: (fields[2] as int?) ?? 0,
     );
   }
 
   @override
   void write(BinaryWriter writer, UserStreak obj) {
     writer
-      ..writeByte(2)
+      ..writeByte(3)
       ..writeByte(0)
       ..write(obj.currentStreak)
       ..writeByte(1)
-      ..write(obj.lastCompletedDate);
+      ..write(obj.lastCompletedDate)
+      ..writeByte(2)
+      ..write(obj.longestStreak);
   }
 
   @override

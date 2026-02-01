@@ -20,19 +20,25 @@ class SessionResultAdapter extends TypeAdapter<SessionResult> {
       date: fields[0] as DateTime,
       nLevel: fields[1] as int,
       accuracy: fields[2] as double,
+      audioAccuracy: fields[3] as double?,
+      visualAccuracy: fields[4] as double?,
     );
   }
 
   @override
   void write(BinaryWriter writer, SessionResult obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.date)
       ..writeByte(1)
       ..write(obj.nLevel)
       ..writeByte(2)
-      ..write(obj.accuracy);
+      ..write(obj.accuracy)
+      ..writeByte(3)
+      ..write(obj.audioAccuracy)
+      ..writeByte(4)
+      ..write(obj.visualAccuracy);
   }
 
   @override

@@ -26,12 +26,15 @@ dependencies:
   # Authentication (aligned for iOS CocoaPods: GoogleUtilities 8.x)
   firebase_core: ^4.4.0
   firebase_auth: ^6.1.4
+  cloud_firestore: ^6.1.2
   google_sign_in: ^6.1.6
 
   # Utilities
   intl: ^0.19.0
   url_launcher: ^6.2.4
   shared_preferences: ^2.2.2
+  path_provider: ^2.1.2
+  share_plus: ^10.0.2
 
   # Audio
   audioplayers: ^6.5.1
@@ -50,6 +53,9 @@ dependencies:
 
   # Keep screen on during game
   wakelock_plus: ^1.2.8
+
+  # App version for Settings (dev mode tap)
+  package_info_plus: ^8.0.2
 
 dev_dependencies:
   flutter_test:

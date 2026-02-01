@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,6 +14,8 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentN = ref.watch(currentNProvider);
+    final highestNAsync = ref.watch(highestNProvider);
+    final highestN = highestNAsync.valueOrNull ?? currentN;
     final streakAsync = ref.watch(currentStreakProvider);
     final isCompleteTodayAsync = ref.watch(isChallengeCompleteTodayProvider);
     final daysThisWeekAsync = ref.watch(daysTrainedInLast7DaysProvider);
@@ -52,17 +55,28 @@ class HomeScreen extends ConsumerWidget {
           children: [
             const SizedBox(height: 16),
             Text(
-              AppStrings.currentLevel.replaceAll('%d', '$currentN'),
+              AppStrings.currentLevel.replaceAll('%d', '$highestN'),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
               textAlign: TextAlign.center,
             ),
+            if (highestN > 0 && currentN < highestN) ...[
+              const SizedBox(height: 4),
+              Text(
+                AppStrings.playingAt.replaceAll('%d', '$currentN'),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+            ],
             const SizedBox(height: 24),
             _DailyChallengeCard(
+              highestN: highestN,
               streakAsync: streakAsync,
               isCompleteTodayAsync: isCompleteTodayAsync,
-              onStart: () => _startGame(context, ref),
+              onStart: (n) => _startGame(context, ref, n),
             ),
             const SizedBox(height: 24),
             _TrainYourBrainCard(onTap: () => context.go('/train')),
@@ -71,34 +85,70 @@ class HomeScreen extends ConsumerWidget {
               daysThisWeekAsync: daysThisWeekAsync,
               last7DaysAsync: last7DaysAsync,
             ),
+            if (kDebugMode) ...[
+              const SizedBox(height: 24),
+              OutlinedButton.icon(
+                onPressed: () => context.go('/debug'),
+                icon: const Icon(Icons.bug_report, size: 20),
+                label: const Text('Run simulator suite (Debug)'),
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 
-  void _startGame(BuildContext context, WidgetRef ref) {
-    final n = ref.read(currentNProvider);
+  void _startGame(BuildContext context, WidgetRef ref, int n) {
     ref.read(gameSessionProvider.notifier).startSession(n);
     context.go('/game');
   }
 }
 
-class _DailyChallengeCard extends StatelessWidget {
+class _DailyChallengeCard extends StatefulWidget {
   const _DailyChallengeCard({
+    required this.highestN,
     required this.streakAsync,
     required this.isCompleteTodayAsync,
     required this.onStart,
   });
 
+  final int highestN;
   final AsyncValue<int> streakAsync;
   final AsyncValue<bool> isCompleteTodayAsync;
-  final VoidCallback onStart;
+  final void Function(int n) onStart;
+
+  @override
+  State<_DailyChallengeCard> createState() => _DailyChallengeCardState();
+}
+
+class _DailyChallengeCardState extends State<_DailyChallengeCard> {
+  static const int _minN = 1;
+  static const int _maxN = 15;
+
+  late int _selectedN;
+  bool _initializedFromHighest = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedN = widget.highestN > 0 ? widget.highestN.clamp(_minN, _maxN) : _minN;
+    if (widget.highestN > 0) _initializedFromHighest = true;
+  }
+
+  @override
+  void didUpdateWidget(_DailyChallengeCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.highestN > 0 && !_initializedFromHighest) {
+      _initializedFromHighest = true;
+      setState(() => _selectedN = widget.highestN.clamp(_minN, _maxN));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final streak = streakAsync.valueOrNull ?? 0;
-    final isComplete = isCompleteTodayAsync.valueOrNull ?? false;
+    final streak = widget.streakAsync.valueOrNull ?? 0;
+    final isComplete = widget.isCompleteTodayAsync.valueOrNull ?? false;
 
     return Card(
       child: Padding(
@@ -123,15 +173,44 @@ class _DailyChallengeCard extends StatelessWidget {
               AppStrings.maintainStreak.replaceAll('%d', '$streak'),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
-            const SizedBox(height: 12),
-            if (!isComplete)
+            if (!isComplete) ...[
+              const SizedBox(height: 12),
+              Text(
+                AppStrings.dailyChallengeLevel,
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.remove),
+                    onPressed: _selectedN > _minN
+                        ? () => setState(() => _selectedN--)
+                        : null,
+                  ),
+                  Text(
+                    'N = $_selectedN',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: _selectedN < _maxN
+                        ? () => setState(() => _selectedN++)
+                        : null,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: onStart,
+                  onPressed: () => widget.onStart(_selectedN),
                   child: const Text(AppStrings.start),
                 ),
               ),
+            ],
           ],
         ),
       ),

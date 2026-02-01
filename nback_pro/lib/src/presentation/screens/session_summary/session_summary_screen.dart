@@ -47,28 +47,53 @@ class SessionSummaryScreen extends ConsumerWidget {
                     ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
+              Card(
+                margin: EdgeInsets.zero,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                  child: Text(
+                    motivationalMessage,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.w500,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                AppStrings.sessionResults,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+              const SizedBox(height: 12),
               Text(
                 AppStrings.nLevel.replaceAll('%d', '${data.nLevel}'),
                 style: Theme.of(context).textTheme.titleLarge,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Text(
                 AppStrings.audioAccuracy
                     .replaceAll('%d', '${(data.audioScore * 100).round()}'),
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Text(
                 AppStrings.visualAccuracy
                     .replaceAll('%d', '${(data.visualScore * 100).round()}'),
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Text(
                 AppStrings.overallAccuracy
                     .replaceAll('%d', '${(data.totalAccuracy * 100).round()}'),
-                style: Theme.of(context).textTheme.bodyLarge,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
               if (data.isAutoN) ...[
                 const SizedBox(height: 8),
@@ -79,49 +104,10 @@ class SessionSummaryScreen extends ConsumerWidget {
                       ),
                 ),
               ],
-              const SizedBox(height: 24),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  motivationalMessage,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontStyle: FontStyle.italic,
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    ref.read(lastSessionSummaryProvider.notifier).state = null;
-                    context.go('/stats');
-                  },
-                  child: const Text(AppStrings.viewStats),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () {
-                    ref.read(lastSessionSummaryProvider.notifier).state = null;
-                    ref.read(gameSessionProvider.notifier).startSession(data.newN);
-                    ref.read(currentNProvider.notifier).state = data.newN;
-                    context.go('/game');
-                  },
-                  child: const Text(AppStrings.playAgain),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton(
+                child: FilledButton(
                   onPressed: () {
                     ref.read(lastSessionSummaryProvider.notifier).state = null;
                     context.go('/home');

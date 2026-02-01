@@ -12,7 +12,7 @@ class ProgressionInfoScreen extends StatelessWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/home'),
+          onPressed: () => context.go('/tutorial'),
         ),
         title: const Text(AppStrings.progressionTitle),
       ),

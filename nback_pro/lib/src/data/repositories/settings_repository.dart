@@ -2,11 +2,16 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import '../models/user_settings.dart';
 
-const String _settingsBoxName = 'settings';
 const String _settingsKey = 'user_settings';
 
 class SettingsRepository {
+  SettingsRepository(this.userId);
+
+  final String userId;
+
   Box<UserSettings>? _box;
+
+  String get _settingsBoxName => 'settings_$userId';
 
   Future<Box<UserSettings>> _getBox() async {
     _box ??= await Hive.openBox<UserSettings>(_settingsBoxName);
@@ -25,5 +30,15 @@ class SettingsRepository {
   Future<void> saveSettings(UserSettings settings) async {
     final box = await _getBox();
     await box.put(_settingsKey, settings);
+  }
+
+  /// Closes and deletes the settings box from disk. Use for full app reset.
+  /// Callers must invalidate settings-related providers after this.
+  Future<void> closeAndDeleteAll() async {
+    if (_box != null) {
+      await _box!.close();
+      await Hive.deleteBoxFromDisk(_settingsBoxName);
+      _box = null;
+    }
   }
 }

@@ -17,20 +17,21 @@ class UserSettingsAdapter extends TypeAdapter<UserSettings> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return UserSettings(
-      selectedThemeId: fields[0] as int,
-      isAutoN: fields[1] as bool,
-      manualN: fields[2] as int,
-      continuousFeedback: fields[3] as bool,
-      focusMusicEnabled: fields[4] as bool,
+      selectedThemeId: (fields[0] as int?) ?? 0,
+      isAutoN: (fields[1] as bool?) ?? true,
+      manualN: (fields[2] as int?) ?? 1,
+      continuousFeedback: (fields[3] as bool?) ?? false,
+      focusMusicEnabled: (fields[4] as bool?) ?? false,
       reminderTime: fields[5] as String?,
-      speedMultiplier: fields[6] as double,
+      speedMultiplier: (fields[6] as double?) ?? 1.0,
+      showGrid: (fields[7] as bool?) ?? false,
     );
   }
 
   @override
   void write(BinaryWriter writer, UserSettings obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.selectedThemeId)
       ..writeByte(1)
@@ -44,7 +45,9 @@ class UserSettingsAdapter extends TypeAdapter<UserSettings> {
       ..writeByte(5)
       ..write(obj.reminderTime)
       ..writeByte(6)
-      ..write(obj.speedMultiplier);
+      ..write(obj.speedMultiplier)
+      ..writeByte(7)
+      ..write(obj.showGrid);
   }
 
   @override

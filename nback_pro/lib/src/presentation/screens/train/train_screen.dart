@@ -3,10 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_strings.dart';
+import '../../../core/constants/settings_constants.dart';
 import '../../../logic/providers/game_provider.dart';
+import '../../../logic/providers/settings_provider.dart';
+import '../../../logic/providers/stats_provider.dart';
+import '../../../logic/providers/subscription_provider.dart';
+import '../../widgets/paywall_dialog.dart';
 
-/// Screen to pick N (1–15) for a single session and start the game.
-/// Does not change app-level Settings (Auto N / My N); only this session uses the selected N.
+/// Screen to pick N (1–15), speed, and grid for a single session and start the game.
+/// Session options default to stored settings and apply only for this session.
 class TrainScreen extends ConsumerStatefulWidget {
   const TrainScreen({super.key});
 
@@ -17,17 +22,80 @@ class TrainScreen extends ConsumerStatefulWidget {
 class _TrainScreenState extends ConsumerState<TrainScreen> {
   static const int _minN = 1;
   static const int _maxN = 15;
+  static const int _freeMaxN = 3;
+  static const int _freeSessionsPerDay = 2;
 
   int _selectedN = 1;
+  double _sessionSpeed = 1.0;
+  bool _sessionShowGrid = false;
+  bool _initializedFromSettings = false;
+
+  Future<void> _onStartTapped() async {
+    final isPremium = ref.read(isPremiumProvider);
+    if (!isPremium && _selectedN >= 4) {
+      showPaywallDialog(
+        context,
+        paywallContext: PaywallContext.train,
+        title: "You're progressing well.",
+        message:
+            "Level 4 increases working-memory load significantly.\n\n"
+            "Unlock advanced training to continue improving.",
+        onDismiss: () {},
+      );
+      return;
+    }
+    if (!isPremium) {
+      final sessionsToday = await ref.read(sessionsCompletedTodayProvider.future);
+      if (!mounted) return;
+      if (sessionsToday >= _freeSessionsPerDay) {
+        showPaywallDialogSessionLimit(context, onDismiss: () {});
+        return;
+      }
+    }
+    _startSession();
+  }
 
   void _startSession() {
+    ref.read(sessionOverridesProvider.notifier).state = SessionOverrides(
+      speedMultiplier: _sessionSpeed,
+      showGrid: _sessionShowGrid,
+    );
+    ref.read(currentNProvider.notifier).state = _selectedN;
     ref.read(gameSessionProvider.notifier).startSession(_selectedN);
     context.go('/game');
+  }
+
+  int _speedIndex(double v) {
+    int best = 0;
+    for (int i = 0; i < speedOptions.length; i++) {
+      if ((speedOptions[i] - v).abs() < (speedOptions[best] - v).abs()) {
+        best = i;
+      }
+    }
+    return best;
+  }
+
+  String _speedLabel(double v) {
+    return v == v.truncateToDouble() ? '${v.toInt()}x' : '${v}x';
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isPremium = ref.watch(isPremiumProvider);
+    final maxNForUser = isPremium ? _maxN : _freeMaxN;
+    final settings = ref.watch(settingsProvider).valueOrNull;
+    if (settings != null && !_initializedFromSettings) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _sessionSpeed = settings.speedMultiplier;
+            _sessionShowGrid = settings.showGrid;
+            _initializedFromSettings = true;
+          });
+        }
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -41,12 +109,19 @@ class _TrainScreenState extends ConsumerState<TrainScreen> {
         ),
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Spacer(flex: 1),
+              const SizedBox(height: 16),
+              Text(
+                'N level',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -68,27 +143,55 @@ class _TrainScreenState extends ConsumerState<TrainScreen> {
                   IconButton.filled(
                     icon: const Icon(Icons.add),
                     iconSize: 32,
-                    onPressed: _selectedN < _maxN
+                    onPressed: _selectedN < maxNForUser
                         ? () => setState(() => _selectedN++)
                         : null,
                   ),
                 ],
               ),
-              const Spacer(flex: 2),
+              const SizedBox(height: 24),
+              Text(
+                AppStrings.speed,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              ListTile(
+                title: Text(_speedLabel(_sessionSpeed)),
+                subtitle: Slider(
+                  value: _speedIndex(_sessionSpeed).toDouble(),
+                  min: 0,
+                  max: (speedOptions.length - 1).toDouble(),
+                  divisions: speedOptions.length - 1,
+                  label: _speedLabel(_sessionSpeed),
+                  onChanged: (v) {
+                    setState(() {
+                      _sessionSpeed = speedOptions[v.round()];
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                title: const Text(AppStrings.showGrid),
+                subtitle: const Text(AppStrings.showGridSubtitle),
+                value: _sessionShowGrid,
+                onChanged: (value) => setState(() => _sessionShowGrid = value),
+              ),
+              const SizedBox(height: 32),
               SizedBox(
-                width: double.infinity,
-                height: 72,
+                height: 56,
                 child: FilledButton(
-                  onPressed: _startSession,
+                  onPressed: _onStartTapped,
                   style: FilledButton.styleFrom(
-                    textStyle: theme.textTheme.headlineSmall?.copyWith(
+                    textStyle: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   child: const Text(AppStrings.go),
                 ),
               ),
-              const Spacer(flex: 1),
+              const SizedBox(height: 24),
             ],
           ),
         ),

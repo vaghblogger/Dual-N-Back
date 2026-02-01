@@ -13,9 +13,19 @@ class AppStrings {
   static const String continueAsGuest = 'Continue as Guest';
   static const String guestModeWarningTitle = 'Continue as Guest?';
   static const String guestModeWarningMessage =
-      'Progress will not be saved. Continue?';
+      'Progress is saved on this device. Sign in later to sync across devices.';
+  static const String login = 'Login';
+  static const String account = 'Account';
+  static const String notLoggedIn = 'Not Logged in';
+  static const String signedInAsGuest = 'Signed in as guest';
+  static const String loginToSaveProgress = 'Login to save your progress across devices.';
   static const String yes = 'Yes';
   static const String no = 'No';
+  static const String signInCancelledOrUnavailable =
+      'Sign-in cancelled or unavailable. Check that Firebase is configured.';
+  static const String signInFailedWebClientId =
+      'Google Sign-In failed: need Web client ID. Add a Web app in Firebase, re-download google-services.json for Android, or run with: flutter run --dart-define=GOOGLE_WEB_CLIENT_ID=YOUR_WEB_CLIENT_ID';
+  static const String signOut = 'Sign out';
 
   // Home
   static const String goodMorning = 'Good Morning';
@@ -23,6 +33,7 @@ class AppStrings {
   static const String goodEvening = 'Good Evening';
   static const String guest = 'Guest';
   static const String dailyChallenge = 'Daily Challenge';
+  static const String dailyChallengeLevel = 'N-Back level';
   static const String trainYourBrain = 'Train your brain';
   static const String trainYourBrainSubtitle =
       'Choose N (1–15) and play a session. Does not change your settings.';
@@ -36,31 +47,90 @@ class AppStrings {
   static const String stats = 'Stats';
   static const String settings = 'Settings';
   static const String currentLevel = 'Current Level: N-Back %d';
+  static const String playingAt = 'Playing at: N-Back %d';
 
-  // Tutorial
+  // Tutorial / Help
+  static const String helpHubTitle = 'How to play';
   static const String n1RulesTitle = 'N=1: One step back';
   static const String n1RulesDescription =
       'Press Match when the current stimuli matches the one just shown.';
+  static const String n1Step1 =
+      'Each turn you see a **position** (one of 9 squares) and hear a **letter** (C, H, K, …).';
+  static const String n1Step2 =
+      'For **N=1**, a match means: same as the **previous** turn (1 step back).';
+  static const String n1Step3 =
+      'Tap **Visual Match** if the position is the same as last turn; tap **Audio Match** if the letter is the same.';
+  static const String n1Step4 =
+      'You can tap both if both match. Don\'t tap if neither matches.';
   static const String n2RulesTitle = 'N=2: Two steps back';
   static const String n2RulesDescription =
       'Press Match when the current stimuli matches the one shown 2 steps ago.';
+  static const String n2Step1 =
+      'Same as N=1: each turn = one **position** + one **letter**.';
+  static const String n2Step2 =
+      'For **N=2**, a match means: same as **2 turns ago** (not the last turn).';
+  static const String n2Step3 =
+      'Tap **Visual Match** if the position matches 2 turns ago; **Audio Match** if the letter matches 2 turns ago.';
+  static const String n2Step4 =
+      'Tap both if both match; don\'t tap if neither matches.';
   static const String next = 'Next';
+  static const String back = 'Back';
+  static const String aboutAutoN = 'About Auto-N progression';
   static const String progressionTitle = 'Auto-N Progression';
   static const String progressionDescription =
       'We increase difficulty when you master the current level, and decrease when it\'s too hard. Stay in the flow!';
   static const String startTraining = 'Start Training';
 
+  // Tutorial flow (10 screens)
+  static const String tutorialIntroTitle = 'How Dual N-Back works';
+  static const String tutorialIntroBody =
+      'Each turn you see a position (one of 9 squares) and hear a letter.\n\n'
+      'A match means: same as N steps back (N=1: last turn; N=2: 2 turns ago).\n\n'
+      'Tap Position when the square matches; tap Audio when the letter matches. You can tap both if both match.';
+  static const String tutorialN2TransitionTitle = 'Now N=2';
+  static const String tutorialN2TransitionBody =
+      'Same idea, but the match is 2 steps back — not the last turn.';
+  static const String tutorialHigherNTitle = 'Higher N levels';
+  static const String tutorialHigherNBody =
+      'At N=3 you match 3 steps back, and so on. The higher the N, the harder the game. You can train at any N from 1 to 15.';
+  static const String tutorialReadyTitle = 'Ready??';
+  static const String tutorialGo = 'Go';
+
+  // Tutorial step titles (demo screens)
+  static const String tutorialStepTitleN1Position = 'N=1: Position match';
+  static const String tutorialStepTitleN1Audio = 'N=1: Audio match';
+  static const String tutorialStepTitleN1Mixed = 'N=1: Position + Audio';
+  static const String tutorialStepTitleN2Position = 'N=2: Position match';
+  static const String tutorialStepTitleN2Audio = 'N=2: Audio match';
+  static const String tutorialStepTitleN2Mixed = 'N=2: Position + Audio';
+
+  // Guided demo messages (N=1)
+  static const String tutorialMessagePositionSameN1 =
+      'Current position is the same as last position.';
+  static const String tutorialMessageAudioSameN1 =
+      'Same letter as last turn.';
+  static const String tutorialMessageBothSameN1 =
+      'Same position and same letter.';
+  // N=2
+  static const String tutorialMessagePositionSameN2 =
+      'Current position is the same as 2 steps back.';
+  static const String tutorialMessageAudioSameN2 =
+      'Same letter as 2 steps back.';
+  static const String tutorialMessageBothSameN2 =
+      'Same position and same letter as 2 steps back.';
+
   // Game
-  static const String audioMatch = 'Audio Match';
-  static const String visualMatch = 'Visual Match';
+  static const String audioMatch = 'AUDIO';
+  static const String visualMatch = 'POSITION';
   static const String pause = 'Pause';
   static const String resume = 'Resume';
   static const String quit = 'Quit';
   static const String sessionComplete = 'Session Complete!';
+  static const String sessionResults = 'Session results';
   static const String nLevel = 'N-Level: %d';
-  static const String audioAccuracy = 'Audio Accuracy: %d%%';
-  static const String visualAccuracy = 'Visual Accuracy: %d%%';
-  static const String overallAccuracy = 'Overall Accuracy: %d%%';
+  static const String audioAccuracy = 'Audio Accuracy: %d%';
+  static const String visualAccuracy = 'Visual Accuracy: %d%';
+  static const String overallAccuracy = 'Overall Accuracy: %d%';
   static const String nLevelIncreased = 'Your N-level has been increased';
   static const String nLevelDecreased = 'Your N-level has been decreased';
   static const String nLevelMaintained = 'Your N-level has been maintained';
@@ -80,6 +150,9 @@ class AppStrings {
   static const String speed = 'Speed';
   static const String continuousFeedback = 'Continuous Feedback';
   static const String focusMusic = 'Focus Music';
+  static const String showGrid = 'Show grid';
+  static const String showGridSubtitle =
+      'Hide grid lines for harder focus and maximum cognitive training.';
   static const String theme = 'Theme';
   static const String giveFeedback = 'Give Feedback';
   static const String privacyPolicy = 'Privacy Policy';
@@ -93,11 +166,35 @@ class AppStrings {
 
   // Stats
   static const String yourProgress = 'Your Progress';
+  static const String brainInsights = 'Brain Insights';
+  static const String overview = 'Overview';
+  static const String highestNLevel = 'Highest N';
   static const String averageNLevel = 'Average N Level';
   static const String currentNLevel = 'Current N Level';
   static const String totalSessions = 'Total Sessions';
   static const String currentStreak = 'Current Streak';
+  static const String longestStreak = 'Longest Streak';
+  static const String nLevelTrend = 'N-Level trend (last 30 days)';
   static const String sessionHistory = 'Session History';
+  static const String last7Days = 'Last 7 days';
+  static const String proInsightsTitle = 'Pro insights';
+  static const String proInsightsDescription =
+      'Weekly & monthly trends, audio vs visual breakdown, performance heatmap, and export — Unlock Pro.';
+  static const String unlockPro = 'Unlock Pro';
+  static const String notNow = 'Not now';
+  static const String sessionsToday = 'You completed %d session(s) today.';
+  static const String lastSessionSummary = 'Last session: N=%d · %d%%';
+  static const String totalSessionsCount = '%d sessions total';
+  static const String dualChannelBreakdown = 'Audio vs Visual accuracy';
+  static const String dualChannelSubtitle =
+      'Are you stronger in visual or auditory working memory?';
+  static const String performanceHeatmap = 'Performance heatmap';
+  static const String performanceHeatmapSubtitle = 'When do you perform best?';
+  static const String exportCsv = 'Export CSV';
+  static const String shareProgressStory = 'Share progress story';
+  static const String trend7d = '7d';
+  static const String trend30d = '30d';
+  static const String trend90d = '90d';
 
   // Notifications
   static const String dailyChallengeReminder = 'Daily N-Back Challenge';

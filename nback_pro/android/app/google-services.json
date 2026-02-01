@@ -1,33 +1,33 @@
 {
   "project_info": {
-    "project_number": "670704004442",
-    "project_id": "infinite-puzzle-e5852",
-    "storage_bucket": "infinite-puzzle-e5852.firebasestorage.app"
+    "project_number": "964748668071",
+    "project_id": "dualnback-fac9d",
+    "storage_bucket": "dualnback-fac9d.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:670704004442:android:431f964f46401f72d01763",
+        "mobilesdk_app_id": "1:964748668071:android:b03defd8b3401a0693bf82",
         "android_client_info": {
-          "package_name": "com.neuroforge.app"
+          "package_name": "com.yourcompany.nback_pro"
         }
       },
       "oauth_client": [
         {
-          "client_id": "670704004442-kqu5ljrhhieq6j6u57aocldkupqmgq8j.apps.googleusercontent.com",
+          "client_id": "964748668071-859ilr4jej1mm3qgrfqfgieu06fep0ph.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyAEXyyE9f-ZaoWblmlXT__NbjehZldET9U"
+          "current_key": "AIzaSyAaLpVYIosTx2WRpOC9mXlWHYgIw3gzkFI"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "670704004442-kqu5ljrhhieq6j6u57aocldkupqmgq8j.apps.googleusercontent.com",
+              "client_id": "964748668071-859ilr4jej1mm3qgrfqfgieu06fep0ph.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

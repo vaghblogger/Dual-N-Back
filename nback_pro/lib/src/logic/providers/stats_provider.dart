@@ -14,9 +14,21 @@ final averageNProvider = FutureProvider<double>((ref) async {
   return repo.getAverageN();
 });
 
+/// Highest N level ever achieved (from session history). Used for "Current Level" display.
+final highestNProvider = FutureProvider<int>((ref) async {
+  final repo = ref.watch(statsRepositoryProvider);
+  return repo.getMaxN();
+});
+
 final currentStreakProvider = FutureProvider<int>((ref) async {
   final repo = ref.watch(statsRepositoryProvider);
   return repo.getCurrentStreak();
+});
+
+/// Longest streak ever (for display in overview).
+final longestStreakProvider = FutureProvider<int>((ref) async {
+  final repo = ref.watch(statsRepositoryProvider);
+  return repo.getLongestStreak();
 });
 
 final streakDataProvider = FutureProvider<UserStreak>((ref) async {
@@ -39,4 +51,24 @@ final daysTrainedInLast7DaysProvider = FutureProvider<int>((ref) async {
 final last7DaysCompletedProvider = FutureProvider<List<bool>>((ref) async {
   final repo = ref.watch(statsRepositoryProvider);
   return repo.getLast7DaysCompleted();
+});
+
+/// Sessions completed today (same calendar day). Used for free-tier daily limit (2/day).
+final sessionsCompletedTodayProvider = FutureProvider<int>((ref) async {
+  final repo = ref.watch(statsRepositoryProvider);
+  return repo.getSessionsCompletedToday();
+});
+
+/// Sessions in the last [days] days (7, 30, or 90). For premium trend charts.
+final sessionsInLastDaysProvider =
+    FutureProvider.family<List<SessionResult>, int>((ref, days) async {
+  final repo = ref.watch(statsRepositoryProvider);
+  return repo.getSessionsInLastDays(days);
+});
+
+/// Heatmap: day of week (1–7) -> nLevel -> avg accuracy. Premium only.
+final heatmapDataProvider =
+    FutureProvider<Map<int, Map<int, double>>>((ref) async {
+  final repo = ref.watch(statsRepositoryProvider);
+  return repo.getHeatmapData();
 });

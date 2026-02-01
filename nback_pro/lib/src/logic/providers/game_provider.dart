@@ -2,14 +2,32 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/session_result.dart';
 import '../../data/repositories/stats_repository.dart';
+import '../../data/services/sync_service.dart';
 import '../game_engine/nback_engine.dart';
 import '../game_engine/trial.dart';
+import 'auth_provider.dart';
 import 'settings_provider.dart';
+import 'subscription_provider.dart';
 
 final nBackEngineProvider = Provider<NBackEngine>((ref) => NBackEngine());
 
 /// Current effective N level (for display). With Auto-N this is updated after each session.
 final currentNProvider = StateProvider<int>((ref) => 1);
+
+/// Session-only overrides for speed and grid. Set when starting from Train screen;
+/// cleared when the session ends. When null, game uses stored settings.
+class SessionOverrides {
+  final double speedMultiplier;
+  final bool showGrid;
+
+  const SessionOverrides({
+    required this.speedMultiplier,
+    required this.showGrid,
+  });
+}
+
+final sessionOverridesProvider =
+    StateProvider<SessionOverrides?>((ref) => null);
 
 /// Session state: trials, current index, responses, status.
 class GameSessionState {
@@ -46,9 +64,10 @@ class GameSessionNotifier extends StateNotifier<GameSessionState?> {
 
   static const int _maxN = 15;
 
-  void startSession(int n) {
+  /// [trialsPerSession] if set (e.g. simulator) overrides default 20 + n. Must be >= n + 1.
+  void startSession(int n, {int? trialsPerSession}) {
     final engine = _ref.read(nBackEngineProvider);
-    final totalTrials = 20 + n;
+    final totalTrials = (trialsPerSession ?? (20 + n)).clamp(n + 1, 999);
     final trials = engine.generateSession(n, totalTrials);
     state = GameSessionState(
       trials: trials,
@@ -115,14 +134,29 @@ class GameSessionNotifier extends StateNotifier<GameSessionState?> {
   }
 
   /// Returns (audioScore, visualScore, totalAccuracy) in 0.0–1.0.
+  ///
+  /// Scoring rules (standard Dual N-Back):
+  /// - Not tapping = "no match". So (audio: false, visual: false) on a trial is
+  ///   correct when the trial has no audio match and no visual match.
+  /// - Tapping Audio Match = "audio match"; correct when trial is audio match.
+  /// - Tapping Visual Match = "visual match"; correct when trial is visual match.
+  /// - If the user never tapped at all in the entire session, we treat that as
+  ///   no engagement and return 0% (avoids inflating score by doing nothing).
   (double, double, double) calculateScore() {
     final s = state;
     if (s == null || s.trials.isEmpty) return (0.0, 0.0, 0.0);
+    final total = s.trials.length;
+    final anyTap = s.responses.any((r) => r.audio || r.visual);
+    if (!anyTap) {
+      // No tap in entire session: no engagement, do not inflate score
+      return (0.0, 0.0, 0.0);
+    }
     int audioCorrect = 0;
     int visualCorrect = 0;
-    for (int i = 0; i < s.trials.length; i++) {
+    for (int i = 0; i < total; i++) {
       final t = s.trials[i];
       final r = s.responses[i];
+      // Correct = (said match and was match) OR (said no match and was no match)
       if ((r.audio && t.isAudioMatch) || (!r.audio && !t.isAudioMatch)) {
         audioCorrect++;
       }
@@ -130,7 +164,6 @@ class GameSessionNotifier extends StateNotifier<GameSessionState?> {
         visualCorrect++;
       }
     }
-    final total = s.trials.length;
     final audioScore = total > 0 ? audioCorrect / total : 0.0;
     final visualScore = total > 0 ? visualCorrect / total : 0.0;
     final totalAccuracy = (audioScore + visualScore) / 2;
@@ -138,14 +171,17 @@ class GameSessionNotifier extends StateNotifier<GameSessionState?> {
   }
 
   /// Adjusts N level based on accuracy (Auto-N). Call at end of session.
-  /// Returns new N level (capped at _maxN).
+  /// Returns new N level. Capped at 3 for free users, _maxN for premium.
+  /// Threshold: ≥70% move up, <70% move down.
   int adjustNLevel(double accuracy, bool isAutoNEnabled) {
     if (!isAutoNEnabled) return _ref.read(currentNProvider);
+    final isPremium = _ref.read(isPremiumProvider);
+    final cap = isPremium ? _maxN : 3;
     int current = _ref.read(currentNProvider);
-    if (accuracy >= 0.85) {
-      current = (current + 1).clamp(1, _maxN);
-    } else if (accuracy < 0.75) {
-      current = (current - 1).clamp(1, _maxN);
+    if (accuracy >= 0.70) {
+      current = (current + 1).clamp(1, cap);
+    } else if (accuracy < 0.70) {
+      current = (current - 1).clamp(1, cap);
     }
     _ref.read(currentNProvider.notifier).state = current;
     return current;
@@ -153,7 +189,8 @@ class GameSessionNotifier extends StateNotifier<GameSessionState?> {
 }
 
 final statsRepositoryProvider = Provider<StatsRepository>((ref) {
-  return StatsRepository();
+  final userId = ref.watch(currentStorageUserIdProvider);
+  return StatsRepository(userId);
 });
 
 /// Data for the session summary screen. Set when session ends, cleared after viewing.
@@ -179,12 +216,25 @@ final lastSessionSummaryProvider =
     StateProvider<SessionSummaryData?>((ref) => null);
 
 /// Persists session result and streak; adjusts N if Auto-N. Call after session ends.
+/// Firestore sync runs in the background so the summary screen is never blocked by
+/// Firestore errors (e.g. API not enabled or permission denied).
 Future<void> persistSession(WidgetRef ref, SessionResult result) async {
   final statsRepo = ref.read(statsRepositoryProvider);
   final settingsRepo = ref.read(settingsRepositoryProvider);
   final settings = await settingsRepo.getSettings();
   await statsRepo.saveSession(result);
   await statsRepo.incrementStreakOnComplete();
+  final user = ref.read(currentUserProvider);
+  if (user != null) {
+    final uid = user.uid;
+    final sync = SyncService();
+    // Run Firestore push in background so summary always shows even if Firestore fails.
+    Future(() async {
+      await sync.pushSession(uid, result);
+      final streak = await statsRepo.getStreak();
+      await sync.pushStreak(uid, streak);
+    });
+  }
   final gameNotifier = ref.read(gameSessionProvider.notifier);
   gameNotifier.adjustNLevel(result.accuracy, settings.isAutoN);
 }

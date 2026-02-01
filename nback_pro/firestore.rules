@@ -1,0 +1,16 @@
+rules_version = '2';
+// Cloud Firestore security rules for N-Back Pro.
+// Deploy with: firebase deploy --only firestore:rules
+// Or copy these rules into Firebase Console > Firestore Database > Rules.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can read/write only their own data (settings, streak, sessions).
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+      match /sessions/{sessionId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+  }
+}

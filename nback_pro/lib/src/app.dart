@@ -2,16 +2,51 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/theme/app_theme.dart';
+import 'data/services/sync_service.dart';
+import 'logic/providers/auth_provider.dart';
+import 'logic/providers/game_provider.dart';
 import 'logic/providers/router_provider.dart';
 import 'logic/providers/settings_provider.dart';
+import 'logic/providers/stats_provider.dart';
+import 'logic/providers/subscription_provider.dart';
 
-class NBackApp extends ConsumerWidget {
+class NBackApp extends ConsumerStatefulWidget {
   const NBackApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NBackApp> createState() => _NBackAppState();
+}
+
+class _NBackAppState extends ConsumerState<NBackApp> {
+  bool _didSyncOnStart = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final user = ref.watch(currentUserProvider);
+    if (user != null && !_didSyncOnStart) {
+      _didSyncOnStart = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final sync = SyncService();
+        final settingsRepo = ref.read(settingsRepositoryProvider);
+        final statsRepo = ref.read(statsRepositoryProvider);
+        await sync.pull(user.uid, settingsRepo, statsRepo);
+        if (!mounted) return;
+        ref.invalidate(settingsProvider);
+        ref.invalidate(allSessionsProvider);
+        ref.invalidate(averageNProvider);
+        ref.invalidate(highestNProvider);
+        ref.invalidate(currentStreakProvider);
+        ref.invalidate(streakDataProvider);
+        ref.invalidate(isChallengeCompleteTodayProvider);
+        ref.invalidate(daysTrainedInLast7DaysProvider);
+        ref.invalidate(last7DaysCompletedProvider);
+      });
+    }
+
     final settingsAsync = ref.watch(settingsProvider);
-    final themeId = settingsAsync.valueOrNull?.selectedThemeId ?? 0;
+    final storedThemeId = settingsAsync.valueOrNull?.selectedThemeId ?? 0;
+    final isPremium = ref.watch(isPremiumProvider);
+    final themeId = isPremium ? storedThemeId : 0;
     final router = ref.watch(goRouterProvider);
 
     return MaterialApp.router(
