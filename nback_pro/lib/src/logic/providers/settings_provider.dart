@@ -76,6 +76,24 @@ class SettingsNotifier extends AsyncNotifier<UserSettings> {
     }
   }
 
+  Future<void> setAutoN(bool value) async {
+    final settings = state.value;
+    if (settings == null) return;
+    final updated = UserSettings(
+      selectedThemeId: settings.selectedThemeId,
+      isAutoN: value,
+      manualN: settings.manualN,
+      continuousFeedback: settings.continuousFeedback,
+      focusMusicEnabled: settings.focusMusicEnabled,
+      reminderTime: settings.reminderTime,
+      speedMultiplier: settings.speedMultiplier,
+      showGrid: settings.showGrid,
+    );
+    await ref.read(settingsRepositoryProvider).saveSettings(updated);
+    await _pushSettingsIfSignedIn(updated);
+    state = AsyncData(updated);
+  }
+
   Future<void> toggleAutoN() async {
     final settings = state.value;
     if (settings == null) return;

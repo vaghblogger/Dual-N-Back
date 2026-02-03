@@ -2,11 +2,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_strings.dart';
 import '../../../logic/providers/game_provider.dart';
 import '../../../logic/providers/stats_provider.dart';
+import '../../../logic/providers/subscription_provider.dart';
+import '../../widgets/paywall_dialog.dart';
+import '../../widgets/responsive_weekly_streak_row.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -18,7 +20,6 @@ class HomeScreen extends ConsumerWidget {
     final highestN = highestNAsync.valueOrNull ?? currentN;
     final streakAsync = ref.watch(currentStreakProvider);
     final isCompleteTodayAsync = ref.watch(isChallengeCompleteTodayProvider);
-    final daysThisWeekAsync = ref.watch(daysTrainedInLast7DaysProvider);
     final last7DaysAsync = ref.watch(last7DaysCompletedProvider);
 
     return Scaffold(
@@ -49,7 +50,7 @@ class HomeScreen extends ConsumerWidget {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(MediaQuery.sizeOf(context).width < 360 ? 12 : 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -72,18 +73,25 @@ class HomeScreen extends ConsumerWidget {
               ),
             ],
             const SizedBox(height: 24),
+            _WeeklyStreakCard(last7DaysAsync: last7DaysAsync),
+            const SizedBox(height: 24),
             _DailyChallengeCard(
+              currentN: currentN,
               highestN: highestN,
               streakAsync: streakAsync,
               isCompleteTodayAsync: isCompleteTodayAsync,
               onStart: (n) => _startGame(context, ref, n),
             ),
             const SizedBox(height: 24),
-            _TrainYourBrainCard(onTap: () => context.go('/train')),
-            const SizedBox(height: 24),
-            _WeeklyStreakCard(
-              daysThisWeekAsync: daysThisWeekAsync,
-              last7DaysAsync: last7DaysAsync,
+            _TrainYourBrainCard(
+              isPremium: ref.watch(isPremiumProvider),
+              onTap: () {
+                if (ref.read(isPremiumProvider)) {
+                  context.go('/train');
+                } else {
+                  showPaywallDialog(context, paywallContext: PaywallContext.train);
+                }
+              },
             ),
             if (kDebugMode) ...[
               const SizedBox(height: 24),
@@ -100,19 +108,21 @@ class HomeScreen extends ConsumerWidget {
   }
 
   void _startGame(BuildContext context, WidgetRef ref, int n) {
-    ref.read(gameSessionProvider.notifier).startSession(n);
-    context.go('/game');
+    ref.read(currentNProvider.notifier).state = n;
+    context.go('/pre-game', extra: {'n': n, 'fromDailyChallenge': true});
   }
 }
 
 class _DailyChallengeCard extends StatefulWidget {
   const _DailyChallengeCard({
+    required this.currentN,
     required this.highestN,
     required this.streakAsync,
     required this.isCompleteTodayAsync,
     required this.onStart,
   });
 
+  final int currentN;
   final int highestN;
   final AsyncValue<int> streakAsync;
   final AsyncValue<bool> isCompleteTodayAsync;
@@ -123,32 +133,26 @@ class _DailyChallengeCard extends StatefulWidget {
 }
 
 class _DailyChallengeCardState extends State<_DailyChallengeCard> {
-  static const int _minN = 1;
-  static const int _maxN = 15;
-
   late int _selectedN;
-  bool _initializedFromHighest = false;
+
+  int get _maxN => widget.highestN < 1 ? 1 : widget.highestN.clamp(1, 15);
 
   @override
   void initState() {
     super.initState();
-    _selectedN = widget.highestN > 0 ? widget.highestN.clamp(_minN, _maxN) : _minN;
-    if (widget.highestN > 0) _initializedFromHighest = true;
+    _selectedN = widget.currentN.clamp(1, _maxN);
   }
 
   @override
-  void didUpdateWidget(_DailyChallengeCard oldWidget) {
+  void didUpdateWidget(covariant _DailyChallengeCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.highestN > 0 && !_initializedFromHighest) {
-      _initializedFromHighest = true;
-      setState(() => _selectedN = widget.highestN.clamp(_minN, _maxN));
-    }
+    _selectedN = _selectedN.clamp(1, _maxN);
   }
 
   @override
   Widget build(BuildContext context) {
-    final streak = widget.streakAsync.valueOrNull ?? 0;
     final isComplete = widget.isCompleteTodayAsync.valueOrNull ?? false;
+    final maxN = _maxN;
 
     return Card(
       child: Padding(
@@ -169,34 +173,63 @@ class _DailyChallengeCardState extends State<_DailyChallengeCard> {
               ],
             ),
             const SizedBox(height: 8),
-            Text(
-              AppStrings.maintainStreak.replaceAll('%d', '$streak'),
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            if (!isComplete) ...[
+            if (isComplete) ...[
+              Text(
+                AppStrings.dailyChallengeCompleted,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                AppStrings.dailyChallengeComeBackTomorrow,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            ] else ...[
+              Text(
+                AppStrings.maintainYourStreak,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                AppStrings.dailyChallengeChooseLevelUpTo
+                    .replaceAll('%d', '$maxN'),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
               const SizedBox(height: 12),
               Text(
                 AppStrings.dailyChallengeLevel,
-                style: Theme.of(context).textTheme.titleSmall,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
               ),
               const SizedBox(height: 6),
               Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  IconButton(
+                  IconButton.filled(
                     icon: const Icon(Icons.remove),
-                    onPressed: _selectedN > _minN
+                    iconSize: 28,
+                    onPressed: _selectedN > 1
                         ? () => setState(() => _selectedN--)
                         : null,
                   ),
+                  const SizedBox(width: 20),
                   Text(
                     'N = $_selectedN',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.bold,
                         ),
                   ),
-                  IconButton(
+                  const SizedBox(width: 20),
+                  IconButton.filled(
                     icon: const Icon(Icons.add),
-                    onPressed: _selectedN < _maxN
+                    iconSize: 28,
+                    onPressed: _selectedN < maxN
                         ? () => setState(() => _selectedN++)
                         : null,
                   ),
@@ -219,32 +252,50 @@ class _DailyChallengeCardState extends State<_DailyChallengeCard> {
 }
 
 class _TrainYourBrainCard extends StatelessWidget {
-  const _TrainYourBrainCard({required this.onTap});
+  const _TrainYourBrainCard({
+    required this.isPremium,
+    required this.onTap,
+  });
 
+  final bool isPremium;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                AppStrings.trainYourBrain,
-                style: Theme.of(context).textTheme.titleLarge,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.fitness_center, size: 24, color: theme.colorScheme.onSurface),
+                const SizedBox(width: 8),
+                Text(
+                  AppStrings.trainYourBrain,
+                  style: theme.textTheme.titleLarge,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              AppStrings.trainYourBrainSubtitle,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: onTap,
+                child: const Text(AppStrings.startTraining),
               ),
-              const SizedBox(height: 4),
-              Text(
-                AppStrings.trainYourBrainSubtitle,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -253,92 +304,19 @@ class _TrainYourBrainCard extends StatelessWidget {
 
 class _WeeklyStreakCard extends StatelessWidget {
   const _WeeklyStreakCard({
-    required this.daysThisWeekAsync,
     required this.last7DaysAsync,
   });
 
-  final AsyncValue<int> daysThisWeekAsync;
   final AsyncValue<List<bool>> last7DaysAsync;
 
   @override
   Widget build(BuildContext context) {
-    final days = daysThisWeekAsync.valueOrNull ?? 0;
     final completed = last7DaysAsync.valueOrNull ?? List.filled(7, false);
-    final today = DateTime.now();
-    final theme = Theme.of(context);
-
+    final padding = MediaQuery.sizeOf(context).width < 360 ? 12.0 : 16.0;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              AppStrings.weeklyStreak,
-              style: theme.textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              AppStrings.daysThisWeek.replaceAll('%d', '$days'),
-              style: theme.textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: List.generate(7, (i) {
-                final date = today.subtract(Duration(days: 6 - i));
-                final isCompleted = i < completed.length && completed[i];
-                final isToday = i == 6;
-                final label = isToday
-                    ? 'Today'
-                    : DateFormat('EEE').format(date);
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isCompleted
-                            ? (theme.colorScheme.primary.withValues(alpha: 0.3))
-                            : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                        border: Border.all(
-                          color: isCompleted
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.outline.withValues(alpha: 0.5),
-                          width: isCompleted ? 2 : 1,
-                        ),
-                      ),
-                      child: isCompleted
-                          ? Icon(Icons.check, size: 20, color: theme.colorScheme.primary)
-                          : null,
-                    ),
-                    const SizedBox(height: 4),
-                    SizedBox(
-                      width: 44,
-                      child: Text(
-                        label,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontSize: 11,
-                          fontWeight: isToday ? FontWeight.bold : null,
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                );
-              }),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              AppStrings.weeklyStreakSubtitle,
-              style: theme.textTheme.bodySmall,
-            ),
-          ],
-        ),
+        padding: EdgeInsets.all(padding),
+        child: ResponsiveWeeklyStreakRow(last7Days: completed),
       ),
     );
   }

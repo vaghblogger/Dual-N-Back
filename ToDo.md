@@ -1,5 +1,32 @@
-1. When user is playing as Guest and later subscribe as premium user what will happen to the progress done so far ? Is it possible to design in a way that all progress done as Guest will get stored into Premium Account and user do not need to repeat the progress.
+1) Premium name for the tile "Pro Training" instead of "Train your brain")
+Tile Message : Control difficulty, speed, and look. Your brain, your rules.
+Also Add Brain Training Symbol
 
-2. When I click login using google and then decide not to loging and click in screen outside pop up  window there is some error like "Google Sign in needs web cliet ID". Practicalll this means that user decied not to login so they should be brought back to login screen without any error or exceptio
+[Brain Training Symbol] Pro Training                                                     PREMIUM SYMBOL
+                        <Control difficulty, speed, and look. Your brain, your rules >  
 
-3. in training change letters
+
+
+2)  REDESIGN PAYWALL. It should be single paywall across the app. User can enter to from all premium unlock feature and home screen tile 
+Make Paywall full screen instead of pop up. Everywhere
+Also there should be button to say "Will do it Later"
+
+3) Paywall screen (primary)
+One short line near the pricing:
+"No ads. We support the app through Pro — so you get a focused experience."
+"Will do it Later"
+
+4) Settings
+In Settings, add a small section or a single line:
+"This app is ad-free. Pro subscriptions support development and unlock advanced features."
+
+5) After Tutorial over or user choose to skip
+Show Paywall
+"We don’t use ads. Pro helps us keep the app ad-free and add new features."
+"Will do it Later"
+
+6) Make Font bigger for Time for Daily Reminder
+
+7) In setting For my N lock should appear after N = 1. Also when user click it should take user to Paywall
+
+8)

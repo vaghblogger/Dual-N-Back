@@ -1,0 +1,8 @@
+{
+  "firestore": [
+    {
+      "database": "nbackpro",
+      "rules": "firestore.rules"
+    }
+  ]
+}

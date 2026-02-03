@@ -40,4 +40,12 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
   end
+
+  # Fix share_plus umbrella header: framework headers must use angle-bracketed includes
+  share_plus_umbrella = File.join(installer.sandbox.root, 'Target Support Files', 'share_plus', 'share_plus-umbrella.h')
+  if File.exist?(share_plus_umbrella)
+    contents = File.read(share_plus_umbrella)
+    new_contents = contents.gsub('#import "FPPSharePlusPlugin.h"', '#import <share_plus/FPPSharePlusPlugin.h>')
+    File.write(share_plus_umbrella, new_contents) if new_contents != contents
+  end
 end

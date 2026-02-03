@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 
@@ -10,12 +11,13 @@ import 'miniature_grid_demo.dart';
 enum _GuidedPhase {
   gridAnimation,
   message,
-  fingerTap,
-  buttonPressed,
+  waitingForTap,
+  showingFeedback,
   done,
 }
 
-/// One-shot guided demo: grid (2s per step) → message (2s) → finger taps button (1s) → button shows pressed (1s) → done.
+/// Guided demo: optional 2s delay, then grid → message → user taps correct button(s).
+/// Correct tap: show "Great!" etc., then next target or done. Wrong tap: offer retry and replay.
 class GuidedDemoStep extends StatefulWidget {
   const GuidedDemoStep({
     super.key,
@@ -24,6 +26,8 @@ class GuidedDemoStep extends StatefulWidget {
     required this.mode,
     required this.audioService,
     required this.onSequenceComplete,
+    this.initialDelaySeconds = 0,
+    this.onRegisterRetry,
   });
 
   final String title;
@@ -31,6 +35,10 @@ class GuidedDemoStep extends StatefulWidget {
   final String mode; // 'positionOnly' | 'audioOnly' | 'mixed'
   final AudioService audioService;
   final VoidCallback onSequenceComplete;
+  /// Delay in seconds before showing first visual/audio on grid screens (e.g. 2 for steps 2,3,4,6,7,8).
+  final int initialDelaySeconds;
+  /// Called with [replay] so the parent can trigger replay (e.g. Retry button).
+  final void Function(void Function() replay)? onRegisterRetry;
 
   @override
   State<GuidedDemoStep> createState() => _GuidedDemoStepState();
@@ -45,28 +53,42 @@ class _GuidedDemoStepState extends State<GuidedDemoStep>
   static const _highlightOffDuration = Duration(milliseconds: 2000);
   static const _highlightOnAgainDuration = Duration(milliseconds: 1000);
   static const _messageDuration = Duration(milliseconds: 2000);
-  static const _fingerDuration = Duration(milliseconds: 1000);
-  static const _buttonPressedDuration = Duration(milliseconds: 1000);
+  static const _feedbackDisplayDuration = Duration(milliseconds: 1500);
 
   late List<DemoStep> _script;
   int _gridIndex = 0;
   _GridSubPhase _gridSubPhase = _GridSubPhase.on;
   _GuidedPhase _phase = _GuidedPhase.gridAnimation;
   Timer? _timer;
-  int _fingerTarget = 0; // 0 = none, 1 = visual, 2 = audio
+  int _fingerTarget = 0; // 0 = none, 1 = visual, 2 = audio (which button is correct next)
   bool _buttonPressedVisual = false;
   bool _buttonPressedAudio = false;
-  late AnimationController _fingerController;
+  bool _initialDelayActive = false;
+  String? _feedbackText;
 
   @override
   void initState() {
     super.initState();
-    _fingerController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
     _buildScript();
-    _runGridStep();
+    widget.onRegisterRetry?.call(_replaySequence);
+    if (widget.initialDelaySeconds > 0) {
+      _initialDelayActive = true;
+      _timer = Timer(Duration(seconds: widget.initialDelaySeconds), () {
+        if (!mounted) return;
+        setState(() => _initialDelayActive = false);
+        _runGridStep();
+      });
+    } else {
+      _runGridStep();
+    }
+  }
+
+  @override
+  void didUpdateWidget(GuidedDemoStep oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.onRegisterRetry != widget.onRegisterRetry) {
+      widget.onRegisterRetry?.call(_replaySequence);
+    }
   }
 
   void _buildScript() {
@@ -74,25 +96,25 @@ class _GuidedDemoStepState extends State<GuidedDemoStep>
     final mode = widget.mode;
     if (n == 1) {
       if (mode == 'positionOnly') {
-        _script = [(position: 0, letter: 'C'), (position: 0, letter: 'H')];
+        _script = [(position: 0, letter: 'S'), (position: 0, letter: 'H')];
       } else if (mode == 'audioOnly') {
-        _script = [(position: 0, letter: 'C'), (position: 1, letter: 'C')];
+        _script = [(position: 0, letter: 'S'), (position: 1, letter: 'S')];
       } else {
         // Mixed N=1: same position and same audio twice (one cycle).
-        _script = [(position: 0, letter: 'C'), (position: 0, letter: 'C')];
+        _script = [(position: 0, letter: 'S'), (position: 0, letter: 'S')];
       }
     } else {
       if (mode == 'positionOnly') {
         _script = [
-          (position: 0, letter: 'C'),
+          (position: 0, letter: 'S'),
           (position: 1, letter: 'H'),
           (position: 0, letter: 'R'),
         ];
       } else if (mode == 'audioOnly') {
         _script = [
-          (position: 0, letter: 'C'),
+          (position: 0, letter: 'S'),
           (position: 1, letter: 'H'),
-          (position: 2, letter: 'C'),
+          (position: 2, letter: 'S'),
         ];
       } else {
         // N=2 mixed: (1,H) → (2,K) → (1,H). Same position and same letter 2 steps back.
@@ -157,54 +179,100 @@ class _GuidedDemoStepState extends State<GuidedDemoStep>
     _timer?.cancel();
     _timer = Timer(_messageDuration, () {
       if (!mounted) return;
-      _startFingerTap();
+      setState(() {
+        _phase = _GuidedPhase.waitingForTap;
+        // Mixed (4/10, 8/10): 0 = both needed (user can press either first)
+        _fingerTarget = widget.mode == 'mixed'
+            ? 0
+            : (widget.mode == 'positionOnly' ? 1 : 2);
+      });
     });
   }
 
-  void _startFingerTap() {
-    setState(() {
-      _phase = _GuidedPhase.fingerTap;
-      _fingerTarget = widget.mode == 'mixed' ? 1 : (widget.mode == 'positionOnly' ? 1 : 2);
-    });
-    _fingerController.forward(from: 0);
+  void _onTapVisual() {
+    if (_phase != _GuidedPhase.waitingForTap) return;
+    // Accept when we need visual: target 1 (position only) or 0 (mixed, both needed)
+    if (_fingerTarget == 1 || _fingerTarget == 0) {
+      _onCorrectTap(1);
+    } else {
+      _onWrongTap();
+    }
+  }
+
+  void _onTapAudio() {
+    if (_phase != _GuidedPhase.waitingForTap) return;
+    // Accept when we need audio: target 2 (audio only) or 0 (mixed, both needed)
+    if (_fingerTarget == 2 || _fingerTarget == 0) {
+      _onCorrectTap(2);
+    } else {
+      _onWrongTap();
+    }
+  }
+
+  void _onCorrectTap(int which) {
     _timer?.cancel();
-    _timer = Timer(_fingerDuration, () {
-      if (!mounted) return;
-      _showButtonPressed();
-    });
-  }
-
-  void _showButtonPressed() {
+    final list = AppStrings.tutorialFeedbackCorrect;
+    final feedback = list[Random().nextInt(list.length)];
     setState(() {
-      _phase = _GuidedPhase.buttonPressed;
-      if (_fingerTarget == 1) {
+      if (which == 1) {
         _buttonPressedVisual = true;
       } else {
         _buttonPressedAudio = true;
       }
+      _feedbackText = feedback;
+      _phase = _GuidedPhase.showingFeedback;
     });
-    _timer?.cancel();
-    _timer = Timer(_buttonPressedDuration, () {
+    _timer = Timer(_feedbackDisplayDuration, () {
       if (!mounted) return;
-      if (widget.mode == 'mixed' && _buttonPressedVisual && !_buttonPressedAudio) {
+      setState(() => _feedbackText = null);
+      if (widget.mode == 'mixed' && (!_buttonPressedVisual || !_buttonPressedAudio)) {
         setState(() {
-          _buttonPressedVisual = false;
-          _fingerTarget = 2;
-          _phase = _GuidedPhase.fingerTap;
-        });
-        _fingerController.forward(from: 0);
-        _timer = Timer(_fingerDuration, () {
-          if (!mounted) return;
-          setState(() {
-            _phase = _GuidedPhase.buttonPressed;
-            _buttonPressedAudio = true;
-          });
-          _timer = Timer(_buttonPressedDuration, _finishSequence);
+          _fingerTarget = _buttonPressedVisual ? 2 : 1; // need the other one
+          _phase = _GuidedPhase.waitingForTap;
         });
       } else {
         _finishSequence();
       }
     });
+  }
+
+  void _onWrongTap() {
+    _timer?.cancel();
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(AppStrings.tutorialWrongTitle),
+        content: Text(AppStrings.tutorialWrongRetryMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text(AppStrings.no),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _replaySequence();
+            },
+            child: Text(AppStrings.tutorialRetry),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _replaySequence() {
+    if (!mounted) return;
+    _timer?.cancel();
+    setState(() {
+      _gridIndex = 0;
+      _gridSubPhase = _GridSubPhase.on;
+      _phase = _GuidedPhase.gridAnimation;
+      _fingerTarget = 0;
+      _buttonPressedVisual = false;
+      _buttonPressedAudio = false;
+      _feedbackText = null;
+    });
+    _runGridStep();
   }
 
   void _finishSequence() {
@@ -216,11 +284,15 @@ class _GuidedDemoStepState extends State<GuidedDemoStep>
   @override
   void dispose() {
     _timer?.cancel();
-    _fingerController.dispose();
     super.dispose();
   }
 
   String get _messageText {
+    if (_phase == _GuidedPhase.waitingForTap && widget.mode == 'mixed') {
+      if (_fingerTarget == 2) return 'Now tap ${AppStrings.audioMatch}.';
+      if (_fingerTarget == 1) return 'Now tap ${AppStrings.visualMatch}.';
+      // _fingerTarget == 0: both needed (either order)
+    }
     final n = widget.n;
     final mode = widget.mode;
     final String base;
@@ -248,6 +320,7 @@ class _GuidedDemoStepState extends State<GuidedDemoStep>
   static const double _gridAreaHeight = 320;
 
   int get _displayPosition {
+    if (_initialDelayActive) return -1;
     if (_gridSubPhase == _GridSubPhase.off) return -1;
     if (_gridSubPhase == _GridSubPhase.onAgain &&
         _gridIndex + 1 < _script.length &&
@@ -320,7 +393,9 @@ class _GuidedDemoStepState extends State<GuidedDemoStep>
                   ),
                 ),
               ),
-              if (_phase == _GuidedPhase.message || _phase == _GuidedPhase.fingerTap || _phase == _GuidedPhase.buttonPressed)
+              if (_phase == _GuidedPhase.message ||
+                  _phase == _GuidedPhase.waitingForTap ||
+                  _phase == _GuidedPhase.showingFeedback)
                 Positioned(
                   left: 16,
                   right: 16,
@@ -330,12 +405,28 @@ class _GuidedDemoStepState extends State<GuidedDemoStep>
                     borderRadius: BorderRadius.circular(12),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                      child: Text(
-                        _messageText,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          height: 1.35,
-                        ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _messageText,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              height: 1.35,
+                            ),
+                          ),
+                          if (_feedbackText != null) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              _feedbackText!,
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                   ),
@@ -348,46 +439,18 @@ class _GuidedDemoStepState extends State<GuidedDemoStep>
           child: Row(
             children: [
               Expanded(
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  alignment: Alignment.topCenter,
-                  children: [
-                    _DemoButton(
-                      label: AppStrings.audioMatch,
-                      highlighted: _buttonPressedAudio,
-                    ),
-                    if ((_phase == _GuidedPhase.fingerTap || _phase == _GuidedPhase.buttonPressed) && _fingerTarget == 2)
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                        child: Center(
-                          child: _AnimatedFinger(controller: _fingerController),
-                        ),
-                      ),
-                  ],
+                child: _DemoButton(
+                  label: AppStrings.audioMatch,
+                  highlighted: _buttonPressedAudio,
+                  onPressed: _phase == _GuidedPhase.waitingForTap ? _onTapAudio : null,
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  alignment: Alignment.topCenter,
-                  children: [
-                    _DemoButton(
-                      label: AppStrings.visualMatch,
-                      highlighted: _buttonPressedVisual,
-                    ),
-                    if ((_phase == _GuidedPhase.fingerTap || _phase == _GuidedPhase.buttonPressed) && _fingerTarget == 1)
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                        child: Center(
-                          child: _AnimatedFinger(controller: _fingerController),
-                        ),
-                      ),
-                  ],
+                child: _DemoButton(
+                  label: AppStrings.visualMatch,
+                  highlighted: _buttonPressedVisual,
+                  onPressed: _phase == _GuidedPhase.waitingForTap ? _onTapVisual : null,
                 ),
               ),
             ],
@@ -399,10 +462,15 @@ class _GuidedDemoStepState extends State<GuidedDemoStep>
 }
 
 class _DemoButton extends StatelessWidget {
-  const _DemoButton({required this.label, required this.highlighted});
+  const _DemoButton({
+    required this.label,
+    required this.highlighted,
+    this.onPressed,
+  });
 
   final String label;
   final bool highlighted;
+  final VoidCallback? onPressed;
 
   static const _pressScale = 0.96;
   static const _pressDuration = Duration(milliseconds: 150);
@@ -416,7 +484,7 @@ class _DemoButton extends StatelessWidget {
         duration: _pressDuration,
         curve: Curves.easeOut,
         child: ElevatedButton(
-          onPressed: null,
+          onPressed: onPressed,
           style: ElevatedButton.styleFrom(
             backgroundColor: highlighted
                 ? Theme.of(context).colorScheme.primaryContainer
@@ -428,27 +496,6 @@ class _DemoButton extends StatelessWidget {
           child: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         ),
       ),
-    );
-  }
-}
-
-class _AnimatedFinger extends StatelessWidget {
-  const _AnimatedFinger({required this.controller});
-
-  final AnimationController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: controller,
-      builder: (context, child) {
-        final v = controller.value;
-        final scale = v < 0.5 ? 1.2 - 0.3 * (v * 2) : 0.9 + 0.3 * ((v - 0.5) * 2);
-        return Transform.scale(
-          scale: scale,
-          child: Icon(Icons.touch_app, size: 44, color: Theme.of(context).colorScheme.primary),
-        );
-      },
     );
   }
 }

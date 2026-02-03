@@ -5,6 +5,8 @@ import '../../presentation/screens/debug/simulator_debug_screen.dart';
 import '../../presentation/screens/debug/simulator_summary_screen.dart';
 import '../../presentation/screens/game/game_screen.dart';
 import '../../presentation/screens/home/home_screen.dart';
+import '../../presentation/screens/paywall/paywall_screen.dart';
+import '../../presentation/screens/pre_game/pre_game_screen.dart';
 import '../../presentation/screens/onboarding/login_screen.dart';
 import '../../presentation/screens/settings/settings_screen.dart';
 import '../../presentation/screens/session_summary/session_summary_screen.dart';
@@ -41,6 +43,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       // Not signed in with Google: / and /login are the entry points; no theme selection on start
       if (!completed && location != '/' && location != '/login') {
         return '/';
+      }
+      // First time after onboarding: redirect to tutorial if not yet completed
+      if (completed && location == '/home') {
+        final tutorialDone = await ref.read(tutorialCompleteProvider.future);
+        if (!tutorialDone) return '/tutorial/flow';
       }
       // Redirect old tutorial paths to new flow
       if (location == '/tutorial/n1') return '/tutorial/flow?start=1';
@@ -89,6 +96,34 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/tutorial/progression',
         builder: (context, _) => const ProgressionInfoScreen(),
+      ),
+      GoRoute(
+        path: '/paywall',
+        builder: (context, state) {
+          final extra = state.extra is Map ? state.extra as Map<Object?, Object?> : null;
+          final title = extra?['title'] as String?;
+          final message = extra?['message'] as String?;
+          final ctx = extra?['paywallContext'];
+          final fromTutorial = extra?['fromTutorial'] == true;
+          PaywallContext paywallContext = PaywallContext.progress;
+          if (ctx is PaywallContext) paywallContext = ctx;
+          return PaywallScreen(
+            title: title,
+            message: message,
+            paywallContext: paywallContext,
+            fromTutorial: fromTutorial,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/pre-game',
+        builder: (context, state) {
+          final extra = state.extra;
+          final map = extra is Map ? extra as Map<Object?, Object?> : null;
+          final n = map != null ? (map['n'] as int?) ?? 1 : 1;
+          final fromDailyChallenge = map != null && (map['fromDailyChallenge'] == true);
+          return PreGameScreen(n: n.clamp(1, 15), fromDailyChallenge: fromDailyChallenge);
+        },
       ),
       GoRoute(
         path: '/game',

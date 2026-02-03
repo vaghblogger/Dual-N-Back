@@ -1,8 +1,11 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../core/firebase_init.dart';
 
@@ -62,11 +65,7 @@ class AuthService {
       final googleSignIn = await _getGoogleSignIn();
       final googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
-        if (Platform.isAndroid) {
-          throw StateError(
-            _kGoogleSignInFailedMessage,
-          );
-        }
+        // User cancelled the sign-in (e.g. dismissed the account picker)
         return null;
       }
       final googleAuth = await googleUser.authentication;
@@ -86,8 +85,40 @@ class AuthService {
 
   Future<User?> signInWithApple() async {
     if (!Platform.isIOS) return null;
-    // Apple Sign-In requires sign_in_with_apple package - add when needed
-    return null;
+    if (!firebaseInitialized) return null;
+    try {
+      final rawNonce = _generateNonce();
+      final hashedNonce = _sha256ofString(rawNonce);
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: hashedNonce,
+      );
+      final oauthCredential = OAuthProvider('apple.com').credential(
+        idToken: credential.identityToken,
+        rawNonce: rawNonce,
+      );
+      final userCred = await _firebaseAuth.signInWithCredential(oauthCredential);
+      return userCred.user;
+    } on SignInWithAppleAuthorizationException catch (e) {
+      if (e.code == AuthorizationErrorCode.canceled) return null;
+      rethrow;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  static String _generateNonce() {
+    final bytes = List<int>.generate(32, (_) => (DateTime.now().microsecondsSinceEpoch & 0xff));
+    return base64UrlEncode(bytes);
+  }
+
+  static String _sha256ofString(String input) {
+    final bytes = utf8.encode(input);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
   }
 
   Future<void> signOut() async {

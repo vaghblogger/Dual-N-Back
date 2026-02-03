@@ -34,33 +34,33 @@ class PhasedTutorialDemo extends StatefulWidget {
 class _PhasedTutorialDemoState extends State<PhasedTutorialDemo>
     with TickerProviderStateMixin {
   static const List<DemoStep> _n1Phase1 = [
-    (position: 0, letter: 'C'),
+    (position: 0, letter: 'S'),
     (position: 1, letter: 'H'),
     (position: 0, letter: 'K'),
   ];
   static const List<DemoStep> _n1Phase2 = [
-    (position: 0, letter: 'C'),
-    (position: 1, letter: 'C'),
+    (position: 0, letter: 'S'),
+    (position: 1, letter: 'S'),
     (position: 2, letter: 'K'),
   ];
   static const List<DemoStep> _n1Phase3 = [
-    (position: 0, letter: 'C'),
+    (position: 0, letter: 'S'),
     (position: 1, letter: 'H'),
     (position: 1, letter: 'H'),
   ];
   static const List<DemoStep> _n2Phase1 = [
-    (position: 0, letter: 'C'),
+    (position: 0, letter: 'S'),
     (position: 1, letter: 'H'),
     (position: 2, letter: 'K'),
     (position: 0, letter: 'R'),
   ];
   static const List<DemoStep> _n2Phase2 = [
-    (position: 0, letter: 'C'),
+    (position: 0, letter: 'S'),
     (position: 1, letter: 'H'),
-    (position: 2, letter: 'C'),
+    (position: 2, letter: 'S'),
   ];
   static const List<DemoStep> _n2Phase3 = [
-    (position: 0, letter: 'C'),
+    (position: 0, letter: 'S'),
     (position: 1, letter: 'H'),
     (position: 2, letter: 'K'),
     (position: 1, letter: 'H'),

@@ -36,7 +36,7 @@ class UserSettings extends HiveObject {
     this.focusMusicEnabled = false,
     this.reminderTime,
     this.speedMultiplier = 1.0,
-    this.showGrid = false,
+    this.showGrid = true,
   });
 
   /// For Firestore sync: serialize to map (DateTime as ISO string).
@@ -64,7 +64,7 @@ class UserSettings extends HiveObject {
       focusMusicEnabled: map['focusMusicEnabled'] as bool? ?? false,
       reminderTime: map['reminderTime'] as String?,
       speedMultiplier: (map['speedMultiplier'] as num?)?.toDouble() ?? 1.0,
-      showGrid: map['showGrid'] as bool? ?? false,
+      showGrid: map['showGrid'] as bool? ?? true,
     );
   }
 }

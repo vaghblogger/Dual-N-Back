@@ -5,6 +5,13 @@ class AudioService {
   final AudioPlayer _musicPlayer = AudioPlayer();
   final AudioPlayer _letterPlayer = AudioPlayer();
 
+  AudioService() {
+    // Stop any previous focus music (e.g. after hot restart the old native
+    // player may still be playing; calling stop on the new instance can help
+    // on some platforms / plugin versions).
+    _musicPlayer.stop();
+  }
+
   Future<void> preloadAudio() async {
     // Warm the asset; letter playback uses setSource + resume each time for reliability.
     try {
@@ -34,16 +41,22 @@ class AudioService {
 
   Future<void> startFocusMusic() async {
     try {
+      await _musicPlayer.stop();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
       await _musicPlayer.setReleaseMode(ReleaseMode.loop);
       await _musicPlayer.setVolume(0.3);
-      await _musicPlayer.play(AssetSource('music/focus_ambient.mp3'));
-    } catch (_) {
-      // Focus music optional
+      await _musicPlayer.setSource(AssetSource('music/focus_ambient.mp3'));
+      await _musicPlayer.resume();
+    } catch (e, st) {
+      debugPrint('AudioService startFocusMusic failed: $e');
+      debugPrint('$st');
     }
   }
 
   Future<void> stopFocusMusic() async {
-    await _musicPlayer.stop();
+    try {
+      await _musicPlayer.stop();
+    } catch (_) {}
   }
 
   void dispose() {

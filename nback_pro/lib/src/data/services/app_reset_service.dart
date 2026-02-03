@@ -20,6 +20,7 @@ Future<void> resetApp(WidgetRef ref) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.remove('onboarding_complete');
   await prefs.remove('is_guest');
+  await prefs.remove('tutorial_complete');
 
   final auth = ref.read(authServiceProvider);
   await auth.signOut();
@@ -30,6 +31,7 @@ Future<void> resetApp(WidgetRef ref) async {
   ref.invalidate(authStateChangesProvider);
   ref.invalidate(onboardingCompleteProvider);
   ref.invalidate(isGuestProvider);
+  ref.invalidate(tutorialCompleteProvider);
   ref.invalidate(settingsProvider);
   ref.invalidate(allSessionsProvider);
   ref.invalidate(averageNProvider);

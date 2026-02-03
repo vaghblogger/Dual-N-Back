@@ -84,12 +84,10 @@ class LoginScreen extends ConsumerWidget {
       final user = await auth.signInWithGoogle();
       if (!context.mounted) return;
       if (user == null) {
-        // User cancelled the picker, or Firebase is not initialized
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(AppStrings.signInCancelledOrUnavailable)),
-        );
+        // User cancelled the picker — stay on login without error
         return;
       }
+      final wasGuest = await ref.read(isGuestProvider.future);
       await setGuest(false);
       await setOnboardingComplete(true);
       if (!context.mounted) return;
@@ -97,7 +95,24 @@ class LoginScreen extends ConsumerWidget {
       ref.invalidate(isGuestProvider);
       ref.invalidate(onboardingCompleteProvider);
       final storageId = user.uid.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_');
-      await SyncService().pull(
+      final sync = SyncService();
+      if (wasGuest) {
+        final guestSettingsRepo = SettingsRepository('guest');
+        final guestStatsRepo = StatsRepository('guest');
+        try {
+          final settings = await guestSettingsRepo.getSettings();
+          await sync.pushSettings(user.uid, settings);
+          final streak = await guestStatsRepo.getStreak();
+          await sync.pushStreak(user.uid, streak);
+          final sessions = await guestStatsRepo.getAllSessions();
+          for (final session in sessions) {
+            await sync.pushSession(user.uid, session);
+          }
+        } catch (_) {
+          // Merge best-effort; continue with pull
+        }
+      }
+      await sync.pull(
         user.uid,
         SettingsRepository(storageId),
         StatsRepository(storageId),
@@ -130,14 +145,38 @@ class LoginScreen extends ConsumerWidget {
   Future<void> _signInWithApple(BuildContext context, WidgetRef ref) async {
     try {
       final auth = ref.read(authServiceProvider);
-      await auth.signInWithApple();
+      final user = await auth.signInWithApple();
       if (!context.mounted) return;
+      if (user == null) return;
+      final wasGuest = await ref.read(isGuestProvider.future);
       await setGuest(false);
       await setOnboardingComplete(true);
       if (!context.mounted) return;
       ref.invalidate(authStateChangesProvider);
       ref.invalidate(isGuestProvider);
       ref.invalidate(onboardingCompleteProvider);
+      final storageId = user.uid.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_');
+      final sync = SyncService();
+      if (wasGuest) {
+        final guestSettingsRepo = SettingsRepository('guest');
+        final guestStatsRepo = StatsRepository('guest');
+        try {
+          final settings = await guestSettingsRepo.getSettings();
+          await sync.pushSettings(user.uid, settings);
+          final streak = await guestStatsRepo.getStreak();
+          await sync.pushStreak(user.uid, streak);
+          final sessions = await guestStatsRepo.getAllSessions();
+          for (final session in sessions) {
+            await sync.pushSession(user.uid, session);
+          }
+        } catch (_) {}
+      }
+      await sync.pull(
+        user.uid,
+        SettingsRepository(storageId),
+        StatsRepository(storageId),
+      );
+      if (!context.mounted) return;
       _invalidateUserDataProviders(ref);
       context.go('/home');
     } catch (e) {

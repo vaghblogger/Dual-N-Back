@@ -16,6 +16,7 @@ import '../../../data/models/session_result.dart';
 import '../../../logic/providers/stats_provider.dart';
 import '../../../logic/providers/subscription_provider.dart';
 import '../../../presentation/widgets/paywall_dialog.dart';
+import '../../../presentation/widgets/responsive_weekly_streak_row.dart';
 
 class StatsScreen extends ConsumerWidget {
   const StatsScreen({super.key});
@@ -92,78 +93,85 @@ class _FreeTeaser extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lastSession = sessions.isNotEmpty ? sessions.first : null;
+    final padding = MediaQuery.sizeOf(context).width < 360 ? 12.0 : 16.0;
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(padding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // First card: 2x2 grid (Highest N | Total Sessions; Current Streak | Longest Streak) with streak flame icons
           Card(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              padding: EdgeInsets.symmetric(horizontal: padding, vertical: padding),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Row(
                     children: [
                       Expanded(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.leaderboard,
-                                  size: 28,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '$highestN',
-                                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              AppStrings.highestNLevel,
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ],
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.leaderboard,
+                                    size: 28,
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '$highestN',
+                                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                AppStrings.highestNLevel,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       Expanded(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.fitness_center,
-                                  size: 28,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${sessions.length}',
-                                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              AppStrings.totalSessions,
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ],
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.fitness_center,
+                                    size: 28,
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${sessions.length}',
+                                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                AppStrings.totalSessions,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -175,63 +183,69 @@ class _FreeTeaser extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.local_fire_department,
-                                  size: 28,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '$streak',
-                                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              AppStrings.currentStreak,
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ],
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.local_fire_department,
+                                    size: 28,
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '$streak',
+                                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                AppStrings.currentStreak,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       Expanded(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.local_fire_department,
-                                  size: 28,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '$longestStreak',
-                                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              AppStrings.longestStreak,
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ],
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.local_fire_department,
+                                    size: 28,
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '$longestStreak',
+                                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                AppStrings.longestStreak,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -244,7 +258,7 @@ class _FreeTeaser extends StatelessWidget {
           // Last 7 days — same style as Home Screen (Weekly Streak card)
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(padding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -258,57 +272,7 @@ class _FreeTeaser extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: List.generate(7, (i) {
-                      final today = DateTime.now();
-                      final date = today.subtract(Duration(days: 6 - i));
-                      final isCompleted = i < last7Days.length && last7Days[i];
-                      final isToday = i == 6;
-                      final label = isToday
-                          ? 'Today'
-                          : DateFormat('EEE').format(date);
-                      final theme = Theme.of(context);
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isCompleted
-                                  ? theme.colorScheme.primary.withValues(alpha: 0.3)
-                                  : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                              border: Border.all(
-                                color: isCompleted
-                                    ? theme.colorScheme.primary
-                                    : theme.colorScheme.outline.withValues(alpha: 0.5),
-                                width: isCompleted ? 2 : 1,
-                              ),
-                            ),
-                            child: isCompleted
-                                ? Icon(Icons.check, size: 20, color: theme.colorScheme.primary)
-                                : null,
-                          ),
-                          const SizedBox(height: 4),
-                          SizedBox(
-                            width: 44,
-                            child: Text(
-                              label,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                fontSize: 11,
-                                fontWeight: isToday ? FontWeight.bold : null,
-                              ),
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      );
-                    }),
-                  ),
+                  ResponsiveWeeklyStreakRow(last7Days: last7Days),
                   const SizedBox(height: 4),
                   Text(
                     AppStrings.weeklyStreakSubtitle,
@@ -478,8 +442,9 @@ class _PremiumDashboardState extends ConsumerState<_PremiumDashboard> {
     final sessionsInRangeAsync = ref.watch(sessionsInLastDaysProvider(_selectedTrendDays));
     final heatmapAsync = ref.watch(heatmapDataProvider);
 
+    final padding = MediaQuery.sizeOf(context).width < 360 ? 12.0 : 16.0;
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(padding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -492,7 +457,7 @@ class _PremiumDashboardState extends ConsumerState<_PremiumDashboard> {
           const SizedBox(height: 8),
           Card(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              padding: EdgeInsets.symmetric(horizontal: padding, vertical: padding),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -523,63 +488,69 @@ class _PremiumDashboardState extends ConsumerState<_PremiumDashboard> {
                   Row(
                     children: [
                       Expanded(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.local_fire_department,
-                                  size: 28,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${widget.streak}',
-                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              AppStrings.currentStreak,
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ],
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.local_fire_department,
+                                    size: 28,
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${widget.streak}',
+                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                AppStrings.currentStreak,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       Expanded(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.local_fire_department,
-                                  size: 28,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${widget.longestStreak}',
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              AppStrings.longestStreak,
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ],
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.local_fire_department,
+                                    size: 28,
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${widget.longestStreak}',
+                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                AppStrings.longestStreak,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -592,7 +563,7 @@ class _PremiumDashboardState extends ConsumerState<_PremiumDashboard> {
           // Last 7 days — same style as Home Screen (Weekly Streak card)
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(padding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -607,57 +578,7 @@ class _PremiumDashboardState extends ConsumerState<_PremiumDashboard> {
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: List.generate(7, (i) {
-                      final today = DateTime.now();
-                      final date = today.subtract(Duration(days: 6 - i));
-                      final isCompleted = i < widget.last7Days.length && widget.last7Days[i];
-                      final isToday = i == 6;
-                      final label = isToday
-                          ? 'Today'
-                          : DateFormat('EEE').format(date);
-                      final theme = Theme.of(context);
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isCompleted
-                                  ? theme.colorScheme.primary.withValues(alpha: 0.3)
-                                  : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                              border: Border.all(
-                                color: isCompleted
-                                    ? theme.colorScheme.primary
-                                    : theme.colorScheme.outline.withValues(alpha: 0.5),
-                                width: isCompleted ? 2 : 1,
-                              ),
-                            ),
-                            child: isCompleted
-                                ? Icon(Icons.check, size: 20, color: theme.colorScheme.primary)
-                                : null,
-                          ),
-                          const SizedBox(height: 4),
-                          SizedBox(
-                            width: 44,
-                            child: Text(
-                              label,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                fontSize: 11,
-                                fontWeight: isToday ? FontWeight.bold : null,
-                              ),
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      );
-                    }),
-                  ),
+                  ResponsiveWeeklyStreakRow(last7Days: widget.last7Days),
                   const SizedBox(height: 4),
                   Text(
                     AppStrings.weeklyStreakSubtitle,
@@ -767,12 +688,6 @@ class _PremiumDashboardState extends ConsumerState<_PremiumDashboard> {
           Row(
             children: [
               OutlinedButton.icon(
-                onPressed: () => _exportCsv(context, widget.sessions),
-                icon: const Icon(Icons.download, size: 18),
-                label: const Text(AppStrings.exportCsv),
-              ),
-              const SizedBox(width: 12),
-              OutlinedButton.icon(
                 onPressed: () => _showShareProgressStoryDialog(
                   context,
                   sessions: widget.sessions,
@@ -789,48 +704,6 @@ class _PremiumDashboardState extends ConsumerState<_PremiumDashboard> {
         ],
       ),
     );
-  }
-}
-
-/// Builds CSV string from sessions (date, nLevel, accuracy, audioAccuracy, visualAccuracy).
-String _buildCsvFromSessions(List<SessionResult> sessions) {
-  const header = 'date,nLevel,accuracy,audioAccuracy,visualAccuracy';
-  final rows = sessions.map((s) {
-    final dateStr = DateFormat('yyyy-MM-dd').format(s.date);
-    final audio = s.audioAccuracy != null ? (s.audioAccuracy! * 100).toStringAsFixed(1) : '';
-    final visual = s.visualAccuracy != null ? (s.visualAccuracy! * 100).toStringAsFixed(1) : '';
-    return '$dateStr,${s.nLevel},${(s.accuracy * 100).toStringAsFixed(1)},$audio,$visual';
-  }).toList();
-  return [header, ...rows].join('\n');
-}
-
-/// Shares CSV via share_plus; on failure copies to clipboard.
-Future<void> _exportCsv(BuildContext context, List<SessionResult> sessions) async {
-  if (sessions.isEmpty) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No sessions to export')),
-      );
-    }
-    return;
-  }
-  final csv = _buildCsvFromSessions(sessions);
-  try {
-    await Share.share(csv, subject: 'Dual N-Back Progress');
-  } on MissingPluginException catch (_) {
-    if (context.mounted) {
-      await Clipboard.setData(ClipboardData(text: csv));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Share not available. CSV copied to clipboard.')),
-      );
-    }
-  } catch (e) {
-    if (context.mounted) {
-      await Clipboard.setData(ClipboardData(text: csv));
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Share failed. CSV copied to clipboard. ($e)')),
-      );
-    }
   }
 }
 
@@ -1135,18 +1008,21 @@ class _OverviewItem extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (leadingIcon != null)
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                leadingIcon,
-                size: 28,
-                color: theme.colorScheme.primary,
-              ),
-              const SizedBox(width: 4),
-              valueWidget,
-            ],
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  leadingIcon,
+                  size: 28,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 4),
+                valueWidget,
+              ],
+            ),
           )
         else
           valueWidget,

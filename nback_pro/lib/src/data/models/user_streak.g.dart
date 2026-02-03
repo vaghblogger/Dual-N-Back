@@ -16,8 +16,9 @@ class UserStreakAdapter extends TypeAdapter<UserStreak> {
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
+    // Null-safe for migration: old data may lack fields or have null.
     return UserStreak(
-      currentStreak: fields[0] as int,
+      currentStreak: (fields[0] as int?) ?? 0,
       lastCompletedDate: fields[1] as DateTime?,
       longestStreak: (fields[2] as int?) ?? 0,
     );

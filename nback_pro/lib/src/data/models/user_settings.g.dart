@@ -17,14 +17,14 @@ class UserSettingsAdapter extends TypeAdapter<UserSettings> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return UserSettings(
-      selectedThemeId: (fields[0] as int?) ?? 0,
-      isAutoN: (fields[1] as bool?) ?? true,
-      manualN: (fields[2] as int?) ?? 1,
-      continuousFeedback: (fields[3] as bool?) ?? false,
-      focusMusicEnabled: (fields[4] as bool?) ?? false,
+      selectedThemeId: fields[0] as int,
+      isAutoN: fields[1] as bool,
+      manualN: fields[2] as int,
+      continuousFeedback: fields[3] as bool,
+      focusMusicEnabled: fields[4] as bool,
       reminderTime: fields[5] as String?,
-      speedMultiplier: (fields[6] as double?) ?? 1.0,
-      showGrid: (fields[7] as bool?) ?? false,
+      speedMultiplier: fields[6] as double,
+      showGrid: (fields[7] as bool?) ?? true,
     );
   }
 

@@ -9,10 +9,12 @@ import '../../../core/constants/app_strings.dart';
 import '../../../data/models/session_result.dart';
 import '../../../data/models/user_settings.dart';
 import '../../../debug/simulator_runner.dart';
+import '../../../data/services/audio_service.dart';
 import '../../../logic/providers/audio_service_provider.dart';
 import '../../../logic/providers/game_provider.dart';
 import '../../../logic/providers/settings_provider.dart';
 import '../../../logic/providers/stats_provider.dart';
+import '../../../logic/providers/subscription_provider.dart';
 
 class GameScreen extends ConsumerStatefulWidget {
   const GameScreen({super.key});
@@ -24,23 +26,86 @@ class GameScreen extends ConsumerStatefulWidget {
 class _GameScreenState extends ConsumerState<GameScreen> {
   Timer? _timer;
   Timer? _autoPlayTimer;
+  Timer? _feedbackAudioTimer;
+  Timer? _feedbackVisualTimer;
+  Timer? _initialHoldTimer;
+  bool _initialHoldScheduled = false;
   bool _stimulusVisible = false;
   int _currentIndex = 0;
   Stopwatch? _runStopwatch;
+  bool? _feedbackAudio;
+  bool? _feedbackVisual;
+  AudioService? _audioService;
 
   @override
   void initState() {
     super.initState();
+    _audioService = ref.read(audioServiceProvider);
     WakelockPlus.enable();
-    ref.read(audioServiceProvider).preloadAudio();
+    _audioService?.preloadAudio();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final skipFocus = ref.read(skipFocusMusicThisSessionProvider);
+      if (skipFocus) {
+        ref.read(skipFocusMusicThisSessionProvider.notifier).state = false;
+      }
+      ref.read(settingsProvider.future).then((settings) {
+        if (!mounted) return;
+        if (skipFocus) return; // Pre-game already had focus music; do not start again.
+        if (settings.focusMusicEnabled) {
+          _audioService?.startFocusMusic();
+        }
+      }).catchError((_) {});
+    });
   }
 
   @override
   void dispose() {
     _timer?.cancel();
     _autoPlayTimer?.cancel();
+    _feedbackAudioTimer?.cancel();
+    _feedbackVisualTimer?.cancel();
+    _initialHoldTimer?.cancel();
+    _audioService?.stopFocusMusic();
     WakelockPlus.disable();
     super.dispose();
+  }
+
+  void _onResponse(bool audio, bool visual) {
+    final session = ref.read(gameSessionProvider);
+    if (session == null || session.isComplete) return;
+    final trial = session.currentTrial;
+    if (trial == null) return;
+    // Do not cancel _timer or advance: pace of visual/audio is fixed by the timer in _runTrial.
+    ref.read(gameSessionProvider.notifier).submitResponse(audio, visual);
+    final settings = ref.read(settingsProvider).valueOrNull;
+    final continuousFeedback = settings?.continuousFeedback ?? false;
+    if (continuousFeedback) {
+      final sessionAfter = ref.read(gameSessionProvider);
+      final resp = sessionAfter != null && session.currentIndex < sessionAfter.responses.length
+          ? sessionAfter.responses[session.currentIndex]
+          : (audio: audio, visual: visual);
+      setState(() {
+        // Only set feedback for the button that was just pressed.
+        if (audio) {
+          _feedbackAudio = resp.audio == trial.isAudioMatch;
+          _feedbackAudioTimer?.cancel();
+          _feedbackAudioTimer = Timer(const Duration(milliseconds: 600), () {
+            if (!mounted) return;
+            _feedbackAudioTimer = null;
+            setState(() => _feedbackAudio = null);
+          });
+        }
+        if (visual) {
+          _feedbackVisual = resp.visual == trial.isVisualMatch;
+          _feedbackVisualTimer?.cancel();
+          _feedbackVisualTimer = Timer(const Duration(milliseconds: 600), () {
+            if (!mounted) return;
+            _feedbackVisualTimer = null;
+            setState(() => _feedbackVisual = null);
+          });
+        }
+      });
+    }
   }
 
   void _runTrial() {
@@ -50,6 +115,16 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       _endSession();
       return;
     }
+
+    // Clear any feedback from the previous trial so it doesn't carry over.
+    _feedbackAudioTimer?.cancel();
+    _feedbackAudioTimer = null;
+    _feedbackVisualTimer?.cancel();
+    _feedbackVisualTimer = null;
+    setState(() {
+      _feedbackAudio = null;
+      _feedbackVisual = null;
+    });
 
     final simulatorState = ref.read(simulatorRunnerProvider);
     if (_currentIndex == 0 && simulatorState.isActive && _runStopwatch == null) {
@@ -113,6 +188,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   Future<void> _endSession() async {
     _timer?.cancel();
     _autoPlayTimer?.cancel();
+    ref.read(audioServiceProvider).stopFocusMusic();
     final notifier = ref.read(gameSessionProvider.notifier);
     notifier.completeSession();
     final (audioScore, visualScore, totalAccuracy) = notifier.calculateScore();
@@ -128,7 +204,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       _runStopwatch = null;
       final newN = ref.read(currentNProvider);
       final settings = ref.read(settingsProvider).valueOrNull;
-      final isAutoN = settings?.isAutoN ?? true;
+      final isPremium = ref.read(isPremiumProvider);
+      final isAutoN = isPremium ? true : (settings?.isAutoN ?? true);
       final result = SessionResult(
         date: DateTime.now(),
         nLevel: session.nLevel,
@@ -224,7 +301,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     ref.invalidate(isChallengeCompleteTodayProvider);
     final newN = ref.read(currentNProvider);
     final settings = ref.read(settingsProvider).valueOrNull;
-    final isAutoN = settings?.isAutoN ?? true;
+    final isPremium = ref.read(isPremiumProvider);
+    final isAutoN = isPremium ? true : (settings?.isAutoN ?? true);
     if (!mounted) return;
     ref.read(lastSessionSummaryProvider.notifier).state = SessionSummaryData(
       nLevel: session.nLevel,
@@ -288,9 +366,14 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       );
     }
 
-    if (_currentIndex == 0 && !session.isComplete && _timer == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && ref.read(gameSessionProvider) != null) _runTrial();
+    // Before first pattern: show training grid for 2 seconds, then start.
+    if (_currentIndex == 0 && !session.isComplete && _timer == null && !_initialHoldScheduled) {
+      _initialHoldScheduled = true;
+      _initialHoldTimer = Timer(const Duration(seconds: 2), () {
+        if (!mounted) return;
+        _initialHoldTimer?.cancel();
+        _initialHoldTimer = null;
+        if (ref.read(gameSessionProvider) != null) _runTrial();
       });
     }
 
@@ -300,6 +383,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     final simulatorActive = ref.watch(simulatorRunnerProvider).isActive;
     final overrides = ref.watch(sessionOverridesProvider);
     final showGrid = overrides?.showGrid ?? ref.watch(settingsProvider).valueOrNull?.showGrid ?? false;
+    final continuousFeedback = ref.watch(settingsProvider).valueOrNull?.continuousFeedback ?? false;
 
     return Scaffold(
       appBar: AppBar(
@@ -394,9 +478,17 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                     child: SizedBox(
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: () => ref
-                            .read(gameSessionProvider.notifier)
-                            .submitResponse(true, false),
+                        onPressed: simulatorActive ? null : () => _onResponse(true, false),
+                        style: continuousFeedback && _feedbackAudio != null
+                            ? ElevatedButton.styleFrom(
+                                side: BorderSide(
+                                  color: _feedbackAudio!
+                                      ? Colors.green.shade300
+                                      : Colors.red.shade300,
+                                  width: 2.5,
+                                ),
+                              )
+                            : null,
                         child: Text(
                           AppStrings.audioMatch,
                           style: const TextStyle(
@@ -412,9 +504,17 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                     child: SizedBox(
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: () => ref
-                            .read(gameSessionProvider.notifier)
-                            .submitResponse(false, true),
+                        onPressed: simulatorActive ? null : () => _onResponse(false, true),
+                        style: continuousFeedback && _feedbackVisual != null
+                            ? ElevatedButton.styleFrom(
+                                side: BorderSide(
+                                  color: _feedbackVisual!
+                                      ? Colors.green.shade300
+                                      : Colors.red.shade300,
+                                  width: 2.5,
+                                ),
+                              )
+                            : null,
                         child: Text(
                           AppStrings.visualMatch,
                           style: const TextStyle(

@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../data/services/audio_service.dart';
 import '../../../logic/providers/audio_service_provider.dart';
+import '../../../logic/providers/onboarding_provider.dart';
+import '../../widgets/paywall_dialog.dart';
 import 'guided_demo_step.dart';
 
 /// Single route for the 10-step guided tutorial flow.
@@ -19,6 +21,9 @@ class TutorialFlowScreen extends ConsumerStatefulWidget {
 
 class _TutorialFlowScreenState extends ConsumerState<TutorialFlowScreen> {
   late int _currentStep;
+  VoidCallback? _retryCallback;
+
+  static const _demoSteps = [2, 3, 4, 6, 7, 8];
 
   @override
   void initState() {
@@ -34,6 +39,7 @@ class _TutorialFlowScreenState extends ConsumerState<TutorialFlowScreen> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.initialStep != widget.initialStep) {
       _currentStep = widget.initialStep.clamp(1, 10);
+      if (!_demoSteps.contains(_currentStep)) _retryCallback = null;
     }
   }
 
@@ -43,18 +49,48 @@ class _TutorialFlowScreenState extends ConsumerState<TutorialFlowScreen> {
 
   void _onPrevious() {
     if (_currentStep > 1) {
-      setState(() => _currentStep--);
+      setState(() {
+        _currentStep--;
+        if (!_demoSteps.contains(_currentStep)) _retryCallback = null;
+      });
     }
   }
 
   void _onNext() {
     if (_currentStep < 10) {
-      setState(() => _currentStep++);
+      setState(() {
+        _currentStep++;
+        if (!_demoSteps.contains(_currentStep)) _retryCallback = null;
+      });
     }
   }
 
-  void _onGo() {
-    context.go('/home');
+  void _onRetry() {
+    _retryCallback?.call();
+  }
+
+  void _onGo() async {
+    await setTutorialComplete(true);
+    if (!mounted) return;
+    ref.invalidate(tutorialCompleteProvider);
+    context.push('/paywall', extra: <String, dynamic>{
+      'title': 'Unlock Pro',
+      'message': AppStrings.paywallAfterTutorialMessage,
+      'paywallContext': PaywallContext.train,
+      'fromTutorial': true,
+    });
+  }
+
+  void _onSkip() async {
+    await setTutorialComplete(true);
+    if (!mounted) return;
+    ref.invalidate(tutorialCompleteProvider);
+    context.push('/paywall', extra: <String, dynamic>{
+      'title': 'Unlock Pro',
+      'message': AppStrings.paywallAfterTutorialMessage,
+      'paywallContext': PaywallContext.train,
+      'fromTutorial': true,
+    });
   }
 
   void _onSequenceComplete() {
@@ -67,7 +103,6 @@ class _TutorialFlowScreenState extends ConsumerState<TutorialFlowScreen> {
     final audioService = ref.watch(audioServiceProvider);
     final isLastStep = _currentStep == 10;
     final canGoPrevious = _currentStep > 1;
-    final canGoNext = _currentStep < 10;
 
     return Scaffold(
       appBar: AppBar(
@@ -91,39 +126,47 @@ class _TutorialFlowScreenState extends ConsumerState<TutorialFlowScreen> {
             const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.only(bottom: 24),
-              child: Row(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.chevron_left, size: 48),
-                    onPressed: canGoPrevious ? _onPrevious : null,
-                    tooltip: 'Previous',
-                    style: IconButton.styleFrom(
-                      minimumSize: const Size(72, 72),
-                    ),
+                  // Row: < Previous    RETRY    Next >
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _NavButton(
+                        label: '< ${AppStrings.tutorialPrevious}',
+                        onPressed: canGoPrevious ? _onPrevious : null,
+                      ),
+                      _NavButton(
+                        label: AppStrings.tutorialRetry.toUpperCase(),
+                        onPressed: (_retryCallback != null) ? _onRetry : null,
+                        emphasized: true,
+                      ),
+                      if (isLastStep)
+                        _NavButton(
+                          label: AppStrings.tutorialGo,
+                          onPressed: _onGo,
+                          emphasized: true,
+                        )
+                      else
+                        _NavButton(
+                          label: '${AppStrings.tutorialNext} >',
+                          onPressed: _onNext,
+                        ),
+                    ],
                   ),
-                  Expanded(
-                    child: isLastStep
-                        ? SizedBox(
-                            height: 56,
-                            child: ElevatedButton(
-                              onPressed: _onGo,
-                              child: Text(
-                                AppStrings.tutorialGo,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          )
-                        : const SizedBox(height: 72),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.chevron_right, size: 48),
-                    onPressed: canGoNext ? _onNext : (isLastStep ? _onGo : null),
-                    tooltip: isLastStep ? AppStrings.tutorialGo : 'Next',
-                    style: IconButton.styleFrom(
-                      minimumSize: const Size(72, 72),
+                  const SizedBox(height: 12),
+                  // Full-width: [I know how N-Back works]
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: OutlinedButton(
+                      onPressed: _onSkip,
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                      ),
+                      child: Text(AppStrings.tutorialSkip),
                     ),
                   ),
                 ],
@@ -151,6 +194,10 @@ class _TutorialFlowScreenState extends ConsumerState<TutorialFlowScreen> {
           mode: 'positionOnly',
           audioService: audioService,
           onSequenceComplete: _onSequenceComplete,
+          initialDelaySeconds: 2,
+          onRegisterRetry: (replay) => WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() => _retryCallback = replay);
+          }),
         );
       case 3:
         return GuidedDemoStep(
@@ -160,6 +207,10 @@ class _TutorialFlowScreenState extends ConsumerState<TutorialFlowScreen> {
           mode: 'audioOnly',
           audioService: audioService,
           onSequenceComplete: _onSequenceComplete,
+          initialDelaySeconds: 2,
+          onRegisterRetry: (replay) => WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() => _retryCallback = replay);
+          }),
         );
       case 4:
         return GuidedDemoStep(
@@ -169,6 +220,10 @@ class _TutorialFlowScreenState extends ConsumerState<TutorialFlowScreen> {
           mode: 'mixed',
           audioService: audioService,
           onSequenceComplete: _onSequenceComplete,
+          initialDelaySeconds: 2,
+          onRegisterRetry: (replay) => WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() => _retryCallback = replay);
+          }),
         );
       case 5:
         return _buildTextStep(
@@ -184,6 +239,10 @@ class _TutorialFlowScreenState extends ConsumerState<TutorialFlowScreen> {
           mode: 'positionOnly',
           audioService: audioService,
           onSequenceComplete: _onSequenceComplete,
+          initialDelaySeconds: 2,
+          onRegisterRetry: (replay) => WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() => _retryCallback = replay);
+          }),
         );
       case 7:
         return GuidedDemoStep(
@@ -193,6 +252,10 @@ class _TutorialFlowScreenState extends ConsumerState<TutorialFlowScreen> {
           mode: 'audioOnly',
           audioService: audioService,
           onSequenceComplete: _onSequenceComplete,
+          initialDelaySeconds: 2,
+          onRegisterRetry: (replay) => WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() => _retryCallback = replay);
+          }),
         );
       case 8:
         return GuidedDemoStep(
@@ -202,6 +265,10 @@ class _TutorialFlowScreenState extends ConsumerState<TutorialFlowScreen> {
           mode: 'mixed',
           audioService: audioService,
           onSequenceComplete: _onSequenceComplete,
+          initialDelaySeconds: 2,
+          onRegisterRetry: (replay) => WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() => _retryCallback = replay);
+          }),
         );
       case 9:
         return _buildTextStep(
@@ -269,6 +336,42 @@ class _TutorialFlowScreenState extends ConsumerState<TutorialFlowScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _NavButton extends StatelessWidget {
+  const _NavButton({
+    required this.label,
+    required this.onPressed,
+    this.emphasized = false,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final bool emphasized;
+
+  static const _fontSize = 17.0;
+  static const _minHeight = 52.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final style = ElevatedButton.styleFrom(
+      minimumSize: const Size(0, _minHeight),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      textStyle: TextStyle(
+        fontSize: _fontSize,
+        fontWeight: emphasized ? FontWeight.bold : FontWeight.w600,
+        letterSpacing: emphasized ? 0.5 : 0.2,
+      ),
+      backgroundColor: emphasized ? theme.colorScheme.primaryContainer : null,
+      foregroundColor: emphasized ? theme.colorScheme.onPrimaryContainer : null,
+    );
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: style,
+      child: Text(label),
     );
   }
 }

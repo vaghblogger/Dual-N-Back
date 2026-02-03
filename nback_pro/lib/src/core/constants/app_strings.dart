@@ -16,9 +16,9 @@ class AppStrings {
       'Progress is saved on this device. Sign in later to sync across devices.';
   static const String login = 'Login';
   static const String account = 'Account';
-  static const String notLoggedIn = 'Not Logged in';
+  static const String notLoggedIn = 'Guest';
   static const String signedInAsGuest = 'Signed in as guest';
-  static const String loginToSaveProgress = 'Login to save your progress across devices.';
+  static const String loginToSaveProgress = 'Log in to Save your progress across devices.';
   static const String yes = 'Yes';
   static const String no = 'No';
   static const String signInCancelledOrUnavailable =
@@ -34,9 +34,15 @@ class AppStrings {
   static const String guest = 'Guest';
   static const String dailyChallenge = 'Daily Challenge';
   static const String dailyChallengeLevel = 'N-Back level';
-  static const String trainYourBrain = 'Train your brain';
+  static const String maintainYourStreak = 'Maintain your streak!';
+  static const String todayYouWillTrainOnN = 'Today you will train on N=%d';
+  static const String dailyChallengeChooseLevelUpTo =
+      'Choose level 1 to %d (your current max). You cannot advance to the next level from here.';
+  static const String dailyChallengeCompleted = "You've completed today's challenge.";
+  static const String dailyChallengeComeBackTomorrow = 'Come back tomorrow for your next challenge.';
+  static const String trainYourBrain = 'Pro Training';
   static const String trainYourBrainSubtitle =
-      'Choose N (1–15) and play a session. Does not change your settings.';
+      'Control difficulty, speed, and look. Your brain, your rules.';
   static const String go = 'Go';
   static const String start = 'Start';
   static const String maintainStreak = 'Maintain your %d day streak!';
@@ -48,6 +54,7 @@ class AppStrings {
   static const String settings = 'Settings';
   static const String currentLevel = 'Current Level: N-Back %d';
   static const String playingAt = 'Playing at: N-Back %d';
+  static const String trainCurrentLevelIndicator = 'Current Level = N-Back %d';
 
   // Tutorial / Help
   static const String helpHubTitle = 'How to play';
@@ -95,6 +102,9 @@ class AppStrings {
       'At N=3 you match 3 steps back, and so on. The higher the N, the harder the game. You can train at any N from 1 to 15.';
   static const String tutorialReadyTitle = 'Ready??';
   static const String tutorialGo = 'Go';
+  static const String tutorialSkip = 'I know how N-Back works';
+  static const String tutorialPrevious = 'Previous';
+  static const String tutorialNext = 'Next';
 
   // Tutorial step titles (demo screens)
   static const String tutorialStepTitleN1Position = 'N=1: Position match';
@@ -118,6 +128,20 @@ class AppStrings {
       'Same letter as 2 steps back.';
   static const String tutorialMessageBothSameN2 =
       'Same position and same letter as 2 steps back.';
+
+  // Tutorial feedback (correct tap)
+  static const List<String> tutorialFeedbackCorrect = [
+    'Great!',
+    'Wonderful!',
+    "You're a fast learner!",
+    'Nice!',
+    'Perfect!',
+    'Well done!',
+  ];
+  static const String tutorialWrongTitle = 'Wrong';
+  static const String tutorialWrongRetryMessage =
+      'Want to try again? We\'ll play the sequence again.';
+  static const String tutorialRetry = 'Retry';
 
   // Game
   static const String audioMatch = 'AUDIO';
@@ -147,6 +171,7 @@ class AppStrings {
   static const String dailyReminder = 'Daily Reminder';
   static const String autoN = 'Auto N';
   static const String myN = 'My N';
+  static const String myNSubtitle = 'Choose your own N level';
   static const String speed = 'Speed';
   static const String continuousFeedback = 'Continuous Feedback';
   static const String focusMusic = 'Focus Music';
@@ -157,12 +182,34 @@ class AppStrings {
   static const String giveFeedback = 'Give Feedback';
   static const String privacyPolicy = 'Privacy Policy';
   static const String termsOfUse = 'Terms of Use';
+  static const String privacyPolicyUrl = 'https://example.com/privacy';
+  static const String termsOfUseUrl = 'https://example.com/terms';
+  static const String feedbackEmail = 'feedback@example.com';
   static const String speedWarningTitle = 'Below scientific standards';
   static const String speedWarningMessage =
       'This speed is below scientific standards. You can increase it when comfortable.';
+  static const String speedDefaultMessage =
+      'Default 1.0 is the science-backed pace. Slower = more time; faster = push your limits.';
+  static const String speedBelowOneNudge =
+      'Not scientific pace, but you\'re good until you find yours.';
   static const String feedbackWarningTitle = 'Not scientifically standard';
   static const String feedbackWarningMessage =
       'Immediate feedback is not scientifically standard. You can disable it later.';
+  static const String paywallNoAds =
+      'No ads. We support the app through Pro — so you get a focused experience.';
+  static const String settingsAdFree =
+      'This app is ad-free. Pro subscriptions support development and unlock advanced features.';
+  static const String paywallAfterTutorialMessage =
+      "We don't use ads. Pro helps us keep the app ad-free and add new features.";
+  static const String willDoItLater = 'Will do it Later';
+  static const String paywallBenefitsTitle = 'What you get with Pro';
+  static const String paywallBenefitNoAds = 'Ad-free experience';
+  static const String paywallBenefitLevels = 'Train at N = 4–15 (higher levels)';
+  static const String paywallBenefitUnlimited = 'Unlimited sessions per day';
+  static const String paywallBenefitInsights =
+      'Brain Insights: trends, heatmap, audio vs visual';
+  static const String paywallBenefitThemes = 'Select from range of themes';
+  static const String paywallBenefitControl = 'Speed & grid control';
 
   // Stats
   static const String yourProgress = 'Your Progress';
@@ -179,9 +226,11 @@ class AppStrings {
   static const String last7Days = 'Last 7 days';
   static const String proInsightsTitle = 'Pro insights';
   static const String proInsightsDescription =
-      'Weekly & monthly trends, audio vs visual breakdown, performance heatmap, and export — Unlock Pro.';
+      'Weekly & monthly trends, audio vs visual breakdown, performance heatmap — Unlock Pro.';
   static const String unlockPro = 'Unlock Pro';
+  static const String goPro = 'Go Pro';
   static const String notNow = 'Not now';
+  static const String adFree = 'Ad-free';
   static const String sessionsToday = 'You completed %d session(s) today.';
   static const String lastSessionSummary = 'Last session: N=%d · %d%%';
   static const String totalSessionsCount = '%d sessions total';

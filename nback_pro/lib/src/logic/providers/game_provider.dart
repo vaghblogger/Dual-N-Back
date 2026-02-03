@@ -29,6 +29,9 @@ class SessionOverrides {
 final sessionOverridesProvider =
     StateProvider<SessionOverrides?>((ref) => null);
 
+/// When true, game screen must not start focus music (e.g. after pre-game focus phase).
+final skipFocusMusicThisSessionProvider = StateProvider<bool>((ref) => false);
+
 /// Session state: trials, current index, responses, status.
 class GameSessionState {
   final List<Trial> trials;
@@ -235,6 +238,8 @@ Future<void> persistSession(WidgetRef ref, SessionResult result) async {
       await sync.pushStreak(uid, streak);
     });
   }
+  final isPremium = ref.read(isPremiumProvider);
+  final effectiveIsAutoN = isPremium ? settings.isAutoN : true;
   final gameNotifier = ref.read(gameSessionProvider.notifier);
-  gameNotifier.adjustNLevel(result.accuracy, settings.isAutoN);
+  gameNotifier.adjustNLevel(result.accuracy, effectiveIsAutoN);
 }

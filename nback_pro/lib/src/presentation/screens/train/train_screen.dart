@@ -29,6 +29,7 @@ class _TrainScreenState extends ConsumerState<TrainScreen> {
   double _sessionSpeed = 1.0;
   bool _sessionShowGrid = false;
   bool _initializedFromSettings = false;
+  bool _nInitialized = false;
 
   Future<void> _onStartTapped() async {
     final isPremium = ref.read(isPremiumProvider);
@@ -36,11 +37,6 @@ class _TrainScreenState extends ConsumerState<TrainScreen> {
       showPaywallDialog(
         context,
         paywallContext: PaywallContext.train,
-        title: "You're progressing well.",
-        message:
-            "Level 4 increases working-memory load significantly.\n\n"
-            "Unlock advanced training to continue improving.",
-        onDismiss: () {},
       );
       return;
     }
@@ -61,8 +57,7 @@ class _TrainScreenState extends ConsumerState<TrainScreen> {
       showGrid: _sessionShowGrid,
     );
     ref.read(currentNProvider.notifier).state = _selectedN;
-    ref.read(gameSessionProvider.notifier).startSession(_selectedN);
-    context.go('/game');
+    context.go('/pre-game', extra: {'n': _selectedN});
   }
 
   int _speedIndex(double v) {
@@ -96,6 +91,18 @@ class _TrainScreenState extends ConsumerState<TrainScreen> {
         }
       });
     }
+    if (!_nInitialized) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          final currentN = ref.read(currentNProvider).clamp(_minN, _maxN);
+          final maxNForUser = isPremium ? _maxN : _freeMaxN;
+          setState(() {
+            _selectedN = currentN.clamp(_minN, maxNForUser);
+            _nInitialized = true;
+          });
+        }
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -115,6 +122,14 @@ class _TrainScreenState extends ConsumerState<TrainScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 16),
+              Text(
+                AppStrings.trainCurrentLevelIndicator.replaceAll('%d', '$_selectedN'),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
               Text(
                 'N level',
                 style: theme.textTheme.titleMedium?.copyWith(
@@ -143,9 +158,16 @@ class _TrainScreenState extends ConsumerState<TrainScreen> {
                   IconButton.filled(
                     icon: const Icon(Icons.add),
                     iconSize: 32,
-                    onPressed: _selectedN < maxNForUser
-                        ? () => setState(() => _selectedN++)
-                        : null,
+                    onPressed: () {
+                      if (_selectedN < maxNForUser) {
+                        setState(() => _selectedN++);
+                      } else if (!isPremium && _selectedN == _freeMaxN) {
+                        showPaywallDialog(
+                          context,
+                          paywallContext: PaywallContext.train,
+                        );
+                      }
+                    },
                   ),
                 ],
               ),
@@ -171,6 +193,18 @@ class _TrainScreenState extends ConsumerState<TrainScreen> {
                   },
                 ),
               ),
+              if (_sessionSpeed < 1.0) ...[
+                Padding(
+                  padding: const EdgeInsets.only(left: 16, right: 16, top: 4),
+                  child: Text(
+                    AppStrings.speedBelowOneNudge,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontStyle: FontStyle.italic,
+                        ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 8),
               SwitchListTile(
                 title: const Text(AppStrings.showGrid),
