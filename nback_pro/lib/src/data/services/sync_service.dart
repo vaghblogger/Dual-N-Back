@@ -1,4 +1,9 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import '../models/session_result.dart';
@@ -42,7 +47,14 @@ class SyncService {
     StatsRepository statsRepo,
   ) async {
     if (_firestoreUnavailable) return;
+    // #region agent log
+    final authUid = FirebaseAuth.instance.currentUser?.uid;
+    _debugLog('pull entry', {'uid': uid, 'authUid': authUid, 'databaseId': _firestoreDatabaseId}, 'B,C');
+    // #endregion
     try {
+      // #region agent log
+      _debugLog('pull before get', {'uid': uid}, 'A,D,E');
+      // #endregion
       final userDoc = await _firestore.collection('users').doc(uid).get();
       final data = userDoc.data();
 
@@ -71,10 +83,38 @@ class SyncService {
         await statsRepo.replaceAllSessions(sessions);
       }
     } catch (e) {
+      // #region agent log
+      final code = e is FirebaseException ? e.code : null;
+      final msg = e.toString();
+      _debugLog('pull catch', {'error': msg, 'code': code}, 'A,B,E');
+      // #endregion
       if (_isDatabaseMissing(e)) _firestoreUnavailable = true;
       // Offline or permission: ignore; local data remains
     }
   }
+
+  // #region agent log
+  static void _debugLog(String message, Map<String, dynamic> data, String hypothesisId) {
+    final payload = {
+      'sessionId': 'debug-session',
+      'hypothesisId': hypothesisId,
+      'location': 'sync_service.dart:pull',
+      'message': message,
+      'data': data,
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+    };
+    final host = Platform.isAndroid ? '10.0.2.2' : '127.0.0.1';
+    Future<void> send() async {
+      try {
+        final req = await HttpClient().postUrl(Uri.parse('http://$host:7244/ingest/7778e214-e526-4aed-902b-ea02383967f3'));
+        req.headers.contentType = ContentType('application', 'json');
+        req.write(jsonEncode(payload));
+        await req.close();
+      } catch (_) {}
+    }
+    unawaited(send());
+  }
+  // #endregion
 
   /// Push settings to Firestore. Call when signed in after saving settings locally.
   Future<void> pushSettings(String uid, UserSettings settings) async {

@@ -44,12 +44,24 @@ class NBackEngine {
 
       if (shouldAudioMatch && i >= n) {
         letter = trials[i - n].letter;
+      } else if (i >= n) {
+        // Non-match: ensure letter differs from N-back so stimulus never looks like a match
+        final nBackLetter = trials[i - n].letter;
+        do {
+          letter = _letters[_random.nextInt(_letters.length)];
+        } while (letter == nBackLetter);
       } else {
         letter = _letters[_random.nextInt(_letters.length)];
       }
 
       if (shouldVisualMatch && i >= n) {
         position = trials[i - n].position;
+      } else if (i >= n) {
+        // Non-match: ensure position differs from N-back so stimulus never looks like a match
+        final nBackPosition = trials[i - n].position;
+        do {
+          position = _random.nextInt(9);
+        } while (position == nBackPosition);
       } else {
         position = _random.nextInt(9);
       }

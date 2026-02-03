@@ -92,9 +92,10 @@ class GameSessionNotifier extends StateNotifier<GameSessionState?> {
     );
   }
 
-  void submitResponse(bool audio, bool visual) {
+  /// [forIndex] if non-null, record response at that index (e.g. displayed trial); else use currentIndex.
+  void submitResponse(bool audio, bool visual, {int? forIndex}) {
     if (state == null) return;
-    final i = state!.currentIndex;
+    final i = forIndex ?? state!.currentIndex;
     if (i < 0 || i >= state!.responses.length) return;
     final resp = List<({bool audio, bool visual})>.from(state!.responses);
     resp[i] = (audio: resp[i].audio || audio, visual: resp[i].visual || visual);

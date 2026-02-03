@@ -24,26 +24,22 @@ class GameScreen extends ConsumerStatefulWidget {
 }
 
 class _GameScreenState extends ConsumerState<GameScreen> {
-  Timer? _stimulusTimer;
-  Timer? _trialTimer;
+  Timer? _timer;
   Timer? _autoPlayTimer;
-  Timer? _advanceTimer; // short delay so in-flight taps get correct trial index
   Timer? _feedbackAudioTimer;
   Timer? _feedbackVisualTimer;
   Timer? _initialHoldTimer;
-
+  bool _initialHoldScheduled = false;
   bool _stimulusVisible = false;
-  bool _paused = false;
-
+  int _currentIndex = 0;
+  Stopwatch? _runStopwatch;
   bool? _feedbackAudio;
   bool? _feedbackVisual;
-
-  Stopwatch? _runStopwatch;
   AudioService? _audioService;
 
-  static const int _stimulusMs = 500;
-  /// Delay before advancing to next trial so taps inside the window are processed with correct index.
-  static const int _advanceDelayMs = 120;
+  /// Trial index we attribute responses to. Updated only after showing next trial + delay, so late taps count for the trial that was on screen.
+  int _responseIndex = 0;
+  Timer? _responseIndexTimer;
 
   @override
   void initState() {
@@ -51,14 +47,14 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     _audioService = ref.read(audioServiceProvider);
     WakelockPlus.enable();
     _audioService?.preloadAudio();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final skipFocus = ref.read(skipFocusMusicThisSessionProvider);
       if (skipFocus) {
         ref.read(skipFocusMusicThisSessionProvider.notifier).state = false;
       }
       ref.read(settingsProvider.future).then((settings) {
-        if (!mounted || skipFocus) return;
+        if (!mounted) return;
+        if (skipFocus) return; // Pre-game already had focus music; do not start again.
         if (settings.focusMusicEnabled) {
           _audioService?.startFocusMusic();
         }
@@ -68,205 +64,133 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
   @override
   void dispose() {
-    _cancelAllTimers();
+    _timer?.cancel();
+    _autoPlayTimer?.cancel();
+    _feedbackAudioTimer?.cancel();
+    _feedbackVisualTimer?.cancel();
+    _initialHoldTimer?.cancel();
+    _responseIndexTimer?.cancel();
     _audioService?.stopFocusMusic();
     WakelockPlus.disable();
     super.dispose();
   }
 
-  void _cancelAllTimers() {
-    _stimulusTimer?.cancel();
-    _trialTimer?.cancel();
-    _advanceTimer?.cancel();
-    _autoPlayTimer?.cancel();
-    _feedbackAudioTimer?.cancel();
-    _feedbackVisualTimer?.cancel();
-    _initialHoldTimer?.cancel();
-  }
-
-  /* ================= RESPONSE HANDLING (IMPROVED) ================= */
-
   void _onResponse(bool audio, bool visual) {
     final session = ref.read(gameSessionProvider);
-    if (session == null || session.isComplete || _paused) return;
-
-    if (session.trials.isEmpty) return;
-
-    final overrides = ref.read(sessionOverridesProvider);
+    if (session == null || session.isComplete) return;
+    // Use _responseIndex so late taps (e.g. second tap or position tap) still count for the trial that was on screen.
+    final idx = _responseIndex;
+    if (idx < 0 || idx >= session.trials.length) return;
+    final trial = session.trials[idx];
+    // Do not cancel _timer or advance: pace of visual/audio is fixed by the timer in _runTrial.
+    ref.read(gameSessionProvider.notifier).submitResponse(audio, visual, forIndex: idx);
     final settings = ref.read(settingsProvider).valueOrNull;
-    final speedMultiplier =
-        overrides?.speedMultiplier ?? settings?.speedMultiplier ?? 1.0;
-    final trialDurationMs = (3000 / speedMultiplier).round();
-    final slotMs = trialDurationMs + _advanceDelayMs;
-    final elapsedMs = _runStopwatch?.elapsedMilliseconds ?? 0;
-
-    // Attribute tap to the trial that was active at tap time (fixes scoring when tap is processed after advance)
-    final idxByTime =
-        (elapsedMs / slotMs).floor().clamp(0, session.trials.length - 1);
-
-    // Reject if outside this trial's segment (before start or after end)
-    final trialStartMs = idxByTime * slotMs;
-    final trialEndMs = (idxByTime + 1) * slotMs;
-    if (elapsedMs < trialStartMs || elapsedMs >= trialEndMs) return;
-
-    final response = session.responses[idxByTime];
-
-    // Prevent duplicate taps per channel
-    if (audio && response.audio) return;
-    if (visual && response.visual) return;
-
-    ref.read(gameSessionProvider.notifier)
-        .submitResponse(audio, visual, forIndex: idxByTime);
-
-    final trial = session.trials[idxByTime];
-    final updated = ref.read(gameSessionProvider)?.responses[idxByTime];
-    final correctAudio = updated!.audio == trial.isAudioMatch;
-    final correctVisual = updated.visual == trial.isVisualMatch;
-
-    final feedbackParts = <String>[
-      if (audio) (correctAudio ? 'audio_green' : 'audio_red'),
-      if (visual) (correctVisual ? 'visual_green' : 'visual_red'),
-    ];
-    final elapsedSec = (_runStopwatch?.elapsedMilliseconds ?? 0) / 1000.0;
-    print(
-      '[GAME] ${elapsedSec.toStringAsFixed(1)}s tap trial=$idxByTime '
-      'audio=$audio visual=$visual feedback=${feedbackParts.join('_')}',
-    );
-
-    if (!(settings?.continuousFeedback ?? false)) return;
-
-    if (audio) {
-      _feedbackAudioTimer?.cancel();
-      setState(() => _feedbackAudio = correctAudio);
-      _feedbackAudioTimer = Timer(const Duration(milliseconds: 600), () {
-        if (!mounted) return;
-        setState(() => _feedbackAudio = null);
-      });
-    }
-
-    if (visual) {
-      _feedbackVisualTimer?.cancel();
-      setState(() => _feedbackVisual = correctVisual);
-      _feedbackVisualTimer = Timer(const Duration(milliseconds: 600), () {
-        if (!mounted) return;
-        setState(() => _feedbackVisual = null);
+    final continuousFeedback = settings?.continuousFeedback ?? false;
+    if (continuousFeedback) {
+      final sessionAfter = ref.read(gameSessionProvider);
+      final resp = sessionAfter != null && idx < sessionAfter.responses.length
+          ? sessionAfter.responses[idx]
+          : (audio: audio, visual: visual);
+      setState(() {
+        // Same trial and response index for both channels so feedback matches the displayed stimulus.
+        if (audio) {
+          _feedbackAudio = resp.audio == trial.isAudioMatch;
+          _feedbackAudioTimer?.cancel();
+          _feedbackAudioTimer = Timer(const Duration(milliseconds: 600), () {
+            if (!mounted) return;
+            _feedbackAudioTimer = null;
+            setState(() => _feedbackAudio = null);
+          });
+        }
+        if (visual) {
+          _feedbackVisual = resp.visual == trial.isVisualMatch;
+          _feedbackVisualTimer?.cancel();
+          _feedbackVisualTimer = Timer(const Duration(milliseconds: 600), () {
+            if (!mounted) return;
+            _feedbackVisualTimer = null;
+            setState(() => _feedbackVisual = null);
+          });
+        }
       });
     }
   }
 
-  /* ================= TRIAL FLOW (IMPROVED) ================= */
-
   void _runTrial() {
-    if (_paused) return;
-
     final session = ref.read(gameSessionProvider);
-    if (session == null || session.isComplete) {
+    if (session == null || session.isComplete) return;
+    if (_currentIndex >= session.trials.length) {
       _endSession();
       return;
     }
 
-    final idx = session.currentIndex;
-    if (idx >= session.trials.length) {
-      _endSession();
-      return;
-    }
+    // Clear any feedback from the previous trial so it doesn't carry over.
+    _feedbackAudioTimer?.cancel();
+    _feedbackAudioTimer = null;
+    _feedbackVisualTimer?.cancel();
+    _feedbackVisualTimer = null;
+    setState(() {
+      _feedbackAudio = null;
+      _feedbackVisual = null;
+    });
 
     final simulatorState = ref.read(simulatorRunnerProvider);
-    if (idx == 0 && _runStopwatch == null) {
+    if (_currentIndex == 0 && simulatorState.isActive && _runStopwatch == null) {
       _runStopwatch = Stopwatch()..start();
     }
 
     final overrides = ref.read(sessionOverridesProvider);
     final settings = ref.read(settingsProvider).valueOrNull;
-    final speedMultiplier =
-        overrides?.speedMultiplier ?? settings?.speedMultiplier ?? 1.0;
-
+    final speedMultiplier = overrides?.speedMultiplier ?? settings?.speedMultiplier ?? 1.0;
     final trialDurationMs = (3000 / speedMultiplier).round();
-    final trial = session.trials[idx];
+    const stimulusMs = 500;
 
-    _clearFeedback();
+    final trial = session.trials[_currentIndex];
+    ref.read(gameSessionProvider.notifier).setCurrentIndex(_currentIndex);
+
+    _responseIndexTimer?.cancel();
+    if (_currentIndex == 0) {
+      _responseIndex = 0;
+    } else {
+      _responseIndexTimer = Timer(const Duration(milliseconds: 280), () {
+        if (!mounted) return;
+        _responseIndexTimer = null;
+        _responseIndex = _currentIndex;
+      });
+    }
 
     setState(() => _stimulusVisible = true);
     _playLetter(trial.letter);
 
-    final elapsedSec =
-        (_runStopwatch?.elapsedMilliseconds ?? 0) / 1000.0;
-    print(
-      '[GAME] ${elapsedSec.toStringAsFixed(1)}s trial $idx '
-      'audio="${trial.letter}" visual_pos=${trial.position}',
-    );
-
     if (simulatorState.isActive) {
       _autoPlayTimer?.cancel();
       _autoPlayTimer = Timer(const Duration(milliseconds: 300), () {
-        final s = ref.read(gameSessionProvider);
-        if (s == null) return;
-        final r = s.responses[idx];
-        if (r.audio != null || r.visual != null) return;
-        ref.read(gameSessionProvider.notifier)
-            .submitResponse(trial.isAudioMatch, trial.isVisualMatch, forIndex: idx);
+        if (!mounted) return;
+        ref.read(gameSessionProvider.notifier).submitResponse(
+              trial.isAudioMatch,
+              trial.isVisualMatch,
+            );
       });
     }
 
-    _stimulusTimer = Timer(const Duration(milliseconds: _stimulusMs), () {
-      if (!mounted || _paused) return;
+    _timer = Timer(const Duration(milliseconds: stimulusMs), () {
+      if (!mounted) return;
       setState(() => _stimulusVisible = false);
-    });
-
-    _trialTimer = Timer(Duration(milliseconds: trialDurationMs), () {
-      if (!mounted || _paused) return;
-
-      _advanceTimer?.cancel();
-      _advanceTimer = Timer(const Duration(milliseconds: _advanceDelayMs), () {
-        if (!mounted || _paused) return;
-        final s = ref.read(gameSessionProvider);
-        if (s == null) return;
-        final nextIndex = s.currentIndex + 1;
-        if (nextIndex < s.trials.length) {
-          ref.read(gameSessionProvider.notifier).setCurrentIndex(nextIndex);
+      _timer = Timer(Duration(milliseconds: trialDurationMs - stimulusMs), () {
+        if (!mounted) return;
+        // Delay so taps for this trial (including second tap when both match) are processed before we advance.
+        Future.delayed(const Duration(milliseconds: 220), () {
+          if (!mounted) return;
+          _currentIndex++;
+          final sessionNow = ref.read(gameSessionProvider);
+          if (sessionNow != null && _currentIndex < sessionNow.trials.length) {
+            ref.read(gameSessionProvider.notifier).setCurrentIndex(_currentIndex);
+          }
+          setState(() {});
           _runTrial();
-        } else {
-          _endSession();
-        }
+        });
       });
     });
   }
-
-  void _clearFeedback() {
-    _feedbackAudioTimer?.cancel();
-    _feedbackVisualTimer?.cancel();
-    setState(() {
-      _feedbackAudio = null;
-      _feedbackVisual = null;
-    });
-  }
-
-  /// Debug log: session timeline — audio played (with sec), visual position, user taps.
-  /// Uses print() so output appears in the terminal (flutter run / Run console).
-  void _logSessionCompleteDebug(GameSessionState session, double speedMultiplier) {
-    final trialDurationMs = (3000 / speedMultiplier).round();
-    print('');
-    print('========== SESSION COMPLETE DEBUG (n=${session.nLevel}) ==========');
-    for (int i = 0; i < session.trials.length; i++) {
-      final t = session.trials[i];
-      final r = session.responses[i];
-      final sec = (i * trialDurationMs) / 1000.0;
-      final audioPlayed = t.letter;
-      final visualPosition = t.position;
-      final tappedAudio = r.audio;
-      final tappedVisual = r.visual;
-      print(
-        '  [${sec.toStringAsFixed(1)}s] audio="$audioPlayed" '
-        'visual_pos=$visualPosition '
-        'tap_audio=$tappedAudio tap_visual=$tappedVisual '
-        '(match: audio=${t.isAudioMatch} visual=${t.isVisualMatch})',
-      );
-    }
-    print('========== END SESSION DEBUG ==========');
-    print('');
-  }
-
-  /* ================= AUDIO ================= */
 
   Future<void> _playLetter(String letter) async {
     try {
@@ -274,68 +198,23 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     } catch (e, st) {
       debugPrint('Audio playLetter failed for "$letter": $e');
       debugPrint('$st');
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppStrings.audioUnavailable)),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppStrings.audioUnavailable)),
+        );
+      }
     }
   }
 
-  /* ================= PAUSE ================= */
-
-  void _pause() {
-    _paused = true;
-    _cancelAllTimers();
-    ref.read(gameSessionProvider.notifier).setPaused(true);
-
-    showDialog<void>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text(AppStrings.pause),
-        content: const Text('Resume or quit?'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _paused = false;
-              ref.read(gameSessionProvider.notifier).setPaused(false);
-              _runTrial();
-            },
-            child: const Text(AppStrings.resume),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ref.read(gameSessionProvider.notifier).endSession();
-              ref.read(sessionOverridesProvider.notifier).state = null;
-              context.go('/home');
-            },
-            child: const Text(AppStrings.quit),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /* ================= END SESSION (UNCHANGED LOGIC) ================= */
-
   Future<void> _endSession() async {
-    _cancelAllTimers();
+    _timer?.cancel();
     _autoPlayTimer?.cancel();
     ref.read(audioServiceProvider).stopFocusMusic();
-
     final notifier = ref.read(gameSessionProvider.notifier);
     notifier.completeSession();
-    final (audioScore, visualScore, totalAccuracy) =
-        notifier.calculateScore();
+    final (audioScore, visualScore, totalAccuracy) = notifier.calculateScore();
     final session = ref.read(gameSessionProvider);
     if (session == null) return;
-
-    final overrides = ref.read(sessionOverridesProvider);
-    final settings = ref.read(settingsProvider).valueOrNull;
-    final speedMultiplier =
-        overrides?.speedMultiplier ?? settings?.speedMultiplier ?? 1.0;
-    _logSessionCompleteDebug(session, speedMultiplier);
 
     final runner = ref.read(simulatorRunnerProvider.notifier);
     final runnerState = ref.read(simulatorRunnerProvider);
@@ -348,7 +227,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       final settings = ref.read(settingsProvider).valueOrNull;
       final isPremium = ref.read(isPremiumProvider);
       final isAutoN = isPremium ? true : (settings?.isAutoN ?? true);
-
       final result = SessionResult(
         date: DateTime.now(),
         nLevel: session.nLevel,
@@ -357,7 +235,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         visualAccuracy: visualScore,
       );
       await persistSession(ref, result);
-
       ref.invalidate(allSessionsProvider);
       ref.invalidate(sessionsCompletedTodayProvider);
       ref.invalidate(averageNProvider);
@@ -366,7 +243,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       ref.invalidate(last7DaysCompletedProvider);
       ref.invalidate(currentStreakProvider);
       ref.invalidate(isChallengeCompleteTodayProvider);
-
       notifier.endSession();
       ref.read(sessionOverridesProvider.notifier).state = null;
 
@@ -383,10 +259,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         totalAccuracy: totalAccuracy,
         timestamp: DateTime.now().toIso8601String(),
       );
-
       final next = await runner.recordRunAndPrepareNext(entry);
       if (!mounted) return;
-
       if (next != null) {
         final currentSettings = ref.read(settingsProvider).valueOrNull;
         if (currentSettings != null) {
@@ -401,29 +275,23 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           );
           await ref.read(settingsProvider.notifier).saveSettings(updated);
         }
-
         ref.read(currentNProvider.notifier).state = next.n;
-        final runnerStateNow = ref.read(simulatorRunnerProvider);
-
+        final runnerState = ref.read(simulatorRunnerProvider);
         ref.read(gameSessionProvider.notifier).startSession(
-          next.n,
-          trialsPerSession: runnerStateNow.trialsPerSession,
-        );
-
+              next.n,
+              trialsPerSession: runnerState.trialsPerSession,
+            );
         ref.read(lastSessionSummaryProvider.notifier).state = null;
-
         if (!mounted) return;
         setState(() {
+          _currentIndex = 0;
           _stimulusVisible = false;
         });
-
         _runStopwatch = Stopwatch()..start();
         _runTrial();
         return;
       }
-
-      ref.read(lastSessionSummaryProvider.notifier).state =
-          SessionSummaryData(
+      ref.read(lastSessionSummaryProvider.notifier).state = SessionSummaryData(
         nLevel: session.nLevel,
         audioScore: audioScore,
         visualScore: visualScore,
@@ -431,7 +299,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         newN: newN,
         isAutoN: isAutoN,
       );
-
       if (!mounted) return;
       context.go('/simulator-summary');
       return;
@@ -445,7 +312,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       visualAccuracy: visualScore,
     );
     await persistSession(ref, result);
-
     ref.invalidate(allSessionsProvider);
     ref.invalidate(sessionsCompletedTodayProvider);
     ref.invalidate(averageNProvider);
@@ -454,14 +320,12 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     ref.invalidate(last7DaysCompletedProvider);
     ref.invalidate(currentStreakProvider);
     ref.invalidate(isChallengeCompleteTodayProvider);
-
     final newN = ref.read(currentNProvider);
+    final settings = ref.read(settingsProvider).valueOrNull;
     final isPremium = ref.read(isPremiumProvider);
     final isAutoN = isPremium ? true : (settings?.isAutoN ?? true);
-
     if (!mounted) return;
-    ref.read(lastSessionSummaryProvider.notifier).state =
-        SessionSummaryData(
+    ref.read(lastSessionSummaryProvider.notifier).state = SessionSummaryData(
       nLevel: session.nLevel,
       audioScore: audioScore,
       visualScore: visualScore,
@@ -469,18 +333,50 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       newN: newN,
       isAutoN: isAutoN,
     );
-
+    if (!mounted) return;
     ref.read(sessionOverridesProvider.notifier).state = null;
+    // Navigate immediately so summary is shown (session is left non-null so
+    // game screen does not redirect to home).
     context.go('/session-summary');
   }
 
-  /* ================= BUILD (UNCHANGED UI) ================= */
+  void _pause() {
+    _timer?.cancel();
+    _autoPlayTimer?.cancel();
+    ref.read(gameSessionProvider.notifier).setPaused(true);
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(AppStrings.pause),
+        content: const Text('Resume or quit?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              ref.read(gameSessionProvider.notifier).setPaused(false);
+              _runTrial();
+            },
+            child: const Text(AppStrings.resume),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              ref.read(gameSessionProvider.notifier).endSession();
+              ref.read(sessionOverridesProvider.notifier).state = null;
+              context.go('/home');
+            },
+            child: const Text(AppStrings.quit),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(gameSessionProvider);
-
     if (session == null) {
+      // Don't navigate away if simulator is active and we're about to start the next run.
       if (!ref.read(simulatorRunnerProvider).isActive) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) context.go('/home');
@@ -491,29 +387,24 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       );
     }
 
-    if (session.currentIndex == 0 &&
-        !session.isComplete &&
-        _stimulusTimer == null &&
-        _initialHoldTimer == null) {
+    // Before first pattern: show training grid for 2 seconds, then start.
+    if (_currentIndex == 0 && !session.isComplete && _timer == null && !_initialHoldScheduled) {
+      _initialHoldScheduled = true;
       _initialHoldTimer = Timer(const Duration(seconds: 2), () {
         if (!mounted) return;
-        _runTrial();
+        _initialHoldTimer?.cancel();
+        _initialHoldTimer = null;
+        if (ref.read(gameSessionProvider) != null) _runTrial();
       });
     }
 
     final trial = session.currentTrial;
-    final activePosition =
-        _stimulusVisible && trial != null ? trial.position : -1;
+    final activePosition = _stimulusVisible && trial != null ? trial.position : -1;
 
     final simulatorActive = ref.watch(simulatorRunnerProvider).isActive;
     final overrides = ref.watch(sessionOverridesProvider);
-    final showGrid =
-        overrides?.showGrid ??
-            ref.watch(settingsProvider).valueOrNull?.showGrid ??
-            false;
-    final continuousFeedback =
-        ref.watch(settingsProvider).valueOrNull?.continuousFeedback ??
-            false;
+    final showGrid = overrides?.showGrid ?? ref.watch(settingsProvider).valueOrNull?.showGrid ?? false;
+    final continuousFeedback = ref.watch(settingsProvider).valueOrNull?.continuousFeedback ?? false;
 
     return Scaffold(
       appBar: AppBar(
@@ -535,8 +426,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           children: [
             LinearProgressIndicator(
               value: session.totalTrials > 0
-                  ? (session.currentIndex + 1)
-                          .clamp(0, session.totalTrials) /
+                  ? (session.currentIndex + 1).clamp(0, session.totalTrials) /
                       session.totalTrials
                   : 0,
             ),
@@ -554,11 +444,12 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                             gridDelegate:
                                 SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 3,
+                              childAspectRatio: 1,
                               crossAxisSpacing: showGrid ? 2 : 0,
                               mainAxisSpacing: showGrid ? 2 : 0,
                             ),
                             itemCount: 9,
-                            itemBuilder: (_, index) {
+                            itemBuilder: (context, index) {
                               final isActive = index == activePosition;
                               return Container(
                                 decoration: BoxDecoration(
@@ -576,6 +467,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                                           color: Theme.of(context)
                                               .dividerColor
                                               .withValues(alpha: 0.25),
+                                          width: 1,
                                         )
                                       : null,
                                 ),
@@ -588,8 +480,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                               child: Icon(
                                 Icons.add,
                                 size: 48,
-                                color:
-                                    Theme.of(context).colorScheme.onSurface,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                           ),
@@ -605,53 +496,54 @@ class _GameScreenState extends ConsumerState<GameScreen> {
               child: Row(
                 children: [
                   Expanded(
-                    child: ElevatedButton(
-                      onPressed: simulatorActive
-                          ? null
-                          : () => _onResponse(true, false),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 18, horizontal: 20),
-                        minimumSize: const Size(0, 56),
-                        textStyle: const TextStyle(
-                            fontSize: 17, fontWeight: FontWeight.w600),
-                      ).copyWith(
-                        side: continuousFeedback && _feedbackAudio != null
-                            ? WidgetStateProperty.all(BorderSide(
-                                color: _feedbackAudio!
-                                    ? Colors.green.shade300
-                                    : Colors.red.shade300,
-                                width: 2.5,
-                              ))
+                    child: SizedBox(
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: simulatorActive ? null : () => _onResponse(true, false),
+                        style: continuousFeedback && _feedbackAudio != null
+                            ? ElevatedButton.styleFrom(
+                                side: BorderSide(
+                                  color: _feedbackAudio!
+                                      ? Colors.green.shade300
+                                      : Colors.red.shade300,
+                                  width: 2.5,
+                                ),
+                              )
                             : null,
+                        child: Text(
+                          AppStrings.audioMatch,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                      child: Text(AppStrings.audioMatch),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: ElevatedButton(
-                      onPressed: simulatorActive
-                          ? null
-                          : () => _onResponse(false, true),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 18, horizontal: 20),
-                        minimumSize: const Size(0, 56),
-                        textStyle: const TextStyle(
-                            fontSize: 17, fontWeight: FontWeight.w600),
-                      ).copyWith(
-                        side: continuousFeedback &&
-                                _feedbackVisual != null
-                            ? WidgetStateProperty.all(BorderSide(
-                                color: _feedbackVisual!
-                                    ? Colors.green.shade300
-                                    : Colors.red.shade300,
-                                width: 2.5,
-                              ))
+                    child: SizedBox(
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: simulatorActive ? null : () => _onResponse(false, true),
+                        style: continuousFeedback && _feedbackVisual != null
+                            ? ElevatedButton.styleFrom(
+                                side: BorderSide(
+                                  color: _feedbackVisual!
+                                      ? Colors.green.shade300
+                                      : Colors.red.shade300,
+                                  width: 2.5,
+                                ),
+                              )
                             : null,
+                        child: Text(
+                          AppStrings.visualMatch,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                      child: Text(AppStrings.visualMatch),
                     ),
                   ),
                 ],
@@ -663,4 +555,3 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     );
   }
 }
-

@@ -17,15 +17,15 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
-    afterEvaluate {
-        extensions.findByType<com.android.build.gradle.BaseExtension>()?.apply {
-            compileOptions {
-                sourceCompatibility = JavaVersion.VERSION_17
-                targetCompatibility = JavaVersion.VERSION_17
+}
+
+// Suppress "source/target value 8 is obsolete" from plugin builds (they use Java 8).
+subprojects {
+    if (!state.executed) {
+        afterEvaluate {
+            tasks.withType<org.gradle.api.tasks.compile.JavaCompile>().configureEach {
+                options.compilerArgs.add("-Xlint:-options")
             }
-        }
-        tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-            kotlinOptions { jvmTarget = "17" }
         }
     }
 }
