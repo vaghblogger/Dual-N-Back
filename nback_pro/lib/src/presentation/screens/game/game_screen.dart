@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../core/constants/app_strings.dart';
+import '../../../core/utils/responsive_layout.dart';
 import '../../../data/models/session_result.dart';
 import '../../../data/models/user_settings.dart';
 import '../../../debug/simulator_runner.dart';
@@ -123,16 +124,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     final correctAudio = updated!.audio == trial.isAudioMatch;
     final correctVisual = updated.visual == trial.isVisualMatch;
 
-    final feedbackParts = <String>[
-      if (audio) (correctAudio ? 'audio_green' : 'audio_red'),
-      if (visual) (correctVisual ? 'visual_green' : 'visual_red'),
-    ];
-    final elapsedSec = (_runStopwatch?.elapsedMilliseconds ?? 0) / 1000.0;
-    print(
-      '[GAME] ${elapsedSec.toStringAsFixed(1)}s tap trial=$idxByTime '
-      'audio=$audio visual=$visual feedback=${feedbackParts.join('_')}',
-    );
-
     if (!(settings?.continuousFeedback ?? false)) return;
 
     if (audio) {
@@ -189,20 +180,13 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     setState(() => _stimulusVisible = true);
     _playLetter(trial.letter);
 
-    final elapsedSec =
-        (_runStopwatch?.elapsedMilliseconds ?? 0) / 1000.0;
-    print(
-      '[GAME] ${elapsedSec.toStringAsFixed(1)}s trial $idx '
-      'audio="${trial.letter}" visual_pos=${trial.position}',
-    );
-
     if (simulatorState.isActive) {
       _autoPlayTimer?.cancel();
       _autoPlayTimer = Timer(const Duration(milliseconds: 300), () {
         final s = ref.read(gameSessionProvider);
         if (s == null) return;
         final r = s.responses[idx];
-        if (r.audio != null || r.visual != null) return;
+        if (r.audio || r.visual) return;
         ref.read(gameSessionProvider.notifier)
             .submitResponse(trial.isAudioMatch, trial.isVisualMatch, forIndex: idx);
       });
@@ -241,39 +225,12 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     });
   }
 
-  /// Debug log: session timeline — audio played (with sec), visual position, user taps.
-  /// Uses print() so output appears in the terminal (flutter run / Run console).
-  void _logSessionCompleteDebug(GameSessionState session, double speedMultiplier) {
-    final trialDurationMs = (3000 / speedMultiplier).round();
-    print('');
-    print('========== SESSION COMPLETE DEBUG (n=${session.nLevel}) ==========');
-    for (int i = 0; i < session.trials.length; i++) {
-      final t = session.trials[i];
-      final r = session.responses[i];
-      final sec = (i * trialDurationMs) / 1000.0;
-      final audioPlayed = t.letter;
-      final visualPosition = t.position;
-      final tappedAudio = r.audio;
-      final tappedVisual = r.visual;
-      print(
-        '  [${sec.toStringAsFixed(1)}s] audio="$audioPlayed" '
-        'visual_pos=$visualPosition '
-        'tap_audio=$tappedAudio tap_visual=$tappedVisual '
-        '(match: audio=${t.isAudioMatch} visual=${t.isVisualMatch})',
-      );
-    }
-    print('========== END SESSION DEBUG ==========');
-    print('');
-  }
-
   /* ================= AUDIO ================= */
 
   Future<void> _playLetter(String letter) async {
     try {
       await ref.read(audioServiceProvider).playLetter(letter);
-    } catch (e, st) {
-      debugPrint('Audio playLetter failed for "$letter": $e');
-      debugPrint('$st');
+    } catch (e, _) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppStrings.audioUnavailable)),
@@ -330,12 +287,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         notifier.calculateScore();
     final session = ref.read(gameSessionProvider);
     if (session == null) return;
-
-    final overrides = ref.read(sessionOverridesProvider);
-    final settings = ref.read(settingsProvider).valueOrNull;
-    final speedMultiplier =
-        overrides?.speedMultiplier ?? settings?.speedMultiplier ?? 1.0;
-    _logSessionCompleteDebug(session, speedMultiplier);
 
     final runner = ref.read(simulatorRunnerProvider.notifier);
     final runnerState = ref.read(simulatorRunnerProvider);
@@ -456,6 +407,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     ref.invalidate(isChallengeCompleteTodayProvider);
 
     final newN = ref.read(currentNProvider);
+    final settings = ref.read(settingsProvider).valueOrNull;
     final isPremium = ref.read(isPremiumProvider);
     final isAutoN = isPremium ? true : (settings?.isAutoN ?? true);
 
@@ -543,9 +495,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Text(
-                AppStrings.nextLevelDisplay.replaceAll(
+                AppStrings.trainingAtN.replaceAll(
                   '%d',
-                  '${(session.nLevel + 1).clamp(1, 16)}',
+                  '${session.nLevel.clamp(1, 16)}',
                 ),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
@@ -559,7 +511,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                   child: AspectRatio(
                     aspectRatio: 1,
                     child: Padding(
-                      padding: const EdgeInsets.all(24),
+                      padding: EdgeInsets.all(ResponsiveLayout.gridPadding(context)),
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
@@ -600,7 +552,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                               opacity: 0.15,
                               child: Icon(
                                 Icons.add,
-                                size: 48,
+                                size: ResponsiveLayout.gameGridCenterIconSize(context),
                                 color:
                                     Theme.of(context).colorScheme.onSurface,
                               ),
@@ -614,7 +566,12 @@ class _GameScreenState extends ConsumerState<GameScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
+              padding: EdgeInsets.fromLTRB(
+                ResponsiveLayout.buttonRowHorizontalPadding(context),
+                0,
+                ResponsiveLayout.buttonRowHorizontalPadding(context),
+                ResponsiveLayout.buttonRowBottomPadding(context),
+              ),
               child: Row(
                 children: [
                   Expanded(
@@ -623,11 +580,15 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                           ? null
                           : () => _onResponse(true, false),
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 18, horizontal: 20),
-                        minimumSize: const Size(0, 56),
-                        textStyle: const TextStyle(
-                            fontSize: 17, fontWeight: FontWeight.w600),
+                        padding: EdgeInsets.symmetric(
+                          vertical: ResponsiveLayout.buttonVerticalPadding(context),
+                          horizontal: ResponsiveLayout.buttonHorizontalPadding(context),
+                        ),
+                        minimumSize: Size(0, ResponsiveLayout.buttonMinHeight(context)),
+                        textStyle: TextStyle(
+                          fontSize: ResponsiveLayout.buttonFontSize(context),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ).copyWith(
                         side: continuousFeedback && _feedbackAudio != null
                             ? WidgetStateProperty.all(BorderSide(
@@ -641,18 +602,22 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                       child: Text(AppStrings.audioMatch),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: ResponsiveLayout.buttonRowHorizontalPadding(context)),
                   Expanded(
                     child: ElevatedButton(
                       onPressed: simulatorActive
                           ? null
                           : () => _onResponse(false, true),
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 18, horizontal: 20),
-                        minimumSize: const Size(0, 56),
-                        textStyle: const TextStyle(
-                            fontSize: 17, fontWeight: FontWeight.w600),
+                        padding: EdgeInsets.symmetric(
+                          vertical: ResponsiveLayout.buttonVerticalPadding(context),
+                          horizontal: ResponsiveLayout.buttonHorizontalPadding(context),
+                        ),
+                        minimumSize: Size(0, ResponsiveLayout.buttonMinHeight(context)),
+                        textStyle: TextStyle(
+                          fontSize: ResponsiveLayout.buttonFontSize(context),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ).copyWith(
                         side: continuousFeedback &&
                                 _feedbackVisual != null

@@ -47,6 +47,7 @@ class AppStrings {
   static const String start = 'Start';
   static const String maintainStreak = 'Maintain your %d day streak!';
   static const String weeklyStreak = 'Weekly Streak';
+  static const String dayThisWeek = '1 day this week';
   static const String daysThisWeek = '%d days this week';
   static const String weeklyStreakSubtitle = 'Sessions in the last 7 days.';
   static const String trainingTutorial = 'Training Tutorial';
@@ -59,8 +60,8 @@ class AppStrings {
   static const String trainCurrentLevelIndicator = 'Current Level = N-Back %d';
   /// Label for the N level you are selecting to train at (Pro Training).
   static const String nextNLevel = 'Next N Level';
-  /// Display on game screen: "Next Level: X" where X = current N Level + 1.
-  static const String nextLevelDisplay = 'Next Level: %d';
+  /// Display on game screen: current N level being trained.
+  static const String trainingAtN = 'You are training at N = %d';
   /// Home: "Next session: N-Back X" when Auto N is ON.
   static const String nextSessionDisplay = 'Next session: N-Back %d';
   /// Home optional: "Auto N will adjust after each session."
@@ -261,6 +262,13 @@ class AppStrings {
   static const String trend7d = '7d';
   static const String trend30d = '30d';
   static const String trend90d = '90d';
+  static const String accuracyTrend = 'Accuracy trend';
+  static const String accuracyTrendSubtitle = 'Overall accuracy over time';
+  static const String accuracyByNLevel = 'Accuracy by N-level';
+  static const String accuracyByNLevelSubtitle = 'Average accuracy at each level';
+  static const String heatmapAllTime = 'All';
+  static const String heatmap30d = '30d';
+  static const String heatmap90d = '90d';
 
   // Notifications
   static const String dailyChallengeReminder = 'Daily N-Back Challenge';

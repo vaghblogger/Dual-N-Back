@@ -189,8 +189,7 @@ class SimulatorRunnerNotifier extends StateNotifier<SimulatorRunnerState> {
       final list = state.logs.map((e) => e.toJson()).toList();
       await file.writeAsString(const JsonEncoder.withIndent('  ').convert(list));
       return file.path;
-    } catch (e) {
-      debugPrint('SimulatorRunner exportLogs failed: $e');
+    } catch (_) {
       return null;
     }
   }

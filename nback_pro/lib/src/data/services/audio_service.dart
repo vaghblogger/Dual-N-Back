@@ -1,5 +1,4 @@
 import 'package:audioplayers/audioplayers.dart';
-import 'package:flutter/foundation.dart';
 
 class AudioService {
   final AudioPlayer _musicPlayer = AudioPlayer();
@@ -16,8 +15,8 @@ class AudioService {
     // Warm the asset; letter playback uses setSource + resume each time for reliability.
     try {
       await _letterPlayer.setSource(AssetSource('audio/c.mp3'));
-    } catch (e) {
-      debugPrint('AudioService preload warm: $e');
+    } catch (_) {
+      // Ignore preload failure; letter playback will still attempt per-letter.
     }
   }
 
@@ -32,9 +31,7 @@ class AudioService {
       // Let Android MediaPlayer reach Idle before setDataSource (avoids IllegalStateException).
       await Future<void>.delayed(const Duration(milliseconds: 50));
       await _letterPlayer.play(AssetSource('audio/$key.mp3'));
-    } catch (e, st) {
-      debugPrint('AudioService playLetter failed for $key: $e');
-      debugPrint('$st');
+    } catch (e, _) {
       rethrow;
     }
   }
@@ -47,9 +44,8 @@ class AudioService {
       await _musicPlayer.setVolume(0.3);
       await _musicPlayer.setSource(AssetSource('music/focus_ambient.mp3'));
       await _musicPlayer.resume();
-    } catch (e, st) {
-      debugPrint('AudioService startFocusMusic failed: $e');
-      debugPrint('$st');
+    } catch (_) {
+      // Focus music is optional; ignore failure.
     }
   }
 

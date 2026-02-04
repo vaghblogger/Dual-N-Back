@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_strings.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/responsive_layout.dart';
 import '../../../logic/providers/settings_provider.dart';
 import '../../../logic/providers/subscription_provider.dart';
 import '../../widgets/paywall_dialog.dart';
@@ -25,7 +26,7 @@ class ThemeSelectionScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => const Center(child: Text('Error loading settings')),
         data: (_) => Padding(
-          padding: const EdgeInsets.all(16),
+          padding: ResponsiveLayout.contentPadding(context),
           child: Column(
             children: [
               Expanded(

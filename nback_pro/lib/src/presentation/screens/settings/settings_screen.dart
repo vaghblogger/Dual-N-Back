@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_strings.dart';
 import '../../../core/constants/settings_constants.dart';
+import '../../../core/utils/responsive_layout.dart';
 import '../../../data/models/subscription_state.dart';
 import '../../../data/services/app_reset_service.dart';
 import '../../../logic/providers/auth_provider.dart';
@@ -65,7 +66,7 @@ class SettingsScreen extends ConsumerWidget {
               ? (user.email ?? user.displayName ?? 'Signed in')
               : AppStrings.loginToSaveProgress;
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: ResponsiveLayout.contentPadding(context),
             children: [
               Card(
                 child: InkWell(
@@ -76,7 +77,7 @@ class SettingsScreen extends ConsumerWidget {
                   },
                   borderRadius: BorderRadius.circular(12),
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: ResponsiveLayout.contentPadding(context),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -122,7 +123,7 @@ class SettingsScreen extends ConsumerWidget {
               if (!isPremium) ...[
                 Card(
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: ResponsiveLayout.contentPadding(context),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -268,7 +269,12 @@ class SettingsScreen extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                      padding: EdgeInsets.fromLTRB(
+                        ResponsiveLayout.horizontalPadding(context),
+                        20,
+                        ResponsiveLayout.horizontalPadding(context),
+                        0,
+                      ),
                       child: Text(
                         AppStrings.speedDefaultMessage,
                         style: Theme.of(context).textTheme.bodySmall,

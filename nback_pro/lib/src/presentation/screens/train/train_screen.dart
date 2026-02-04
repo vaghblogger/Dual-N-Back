@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_strings.dart';
 import '../../../core/constants/settings_constants.dart';
+import '../../../core/utils/responsive_layout.dart';
 import '../../../logic/providers/game_provider.dart';
 import '../../../logic/providers/settings_provider.dart';
 import '../../../logic/providers/stats_provider.dart';
@@ -146,7 +147,7 @@ class _TrainScreenState extends ConsumerState<TrainScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: ResponsiveLayout.contentPadding(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_strings.dart';
+import '../../../core/utils/responsive_layout.dart';
 import '../../../data/services/audio_service.dart';
 import '../../../logic/providers/audio_service_provider.dart';
 import '../../../logic/providers/game_provider.dart';
@@ -256,7 +257,7 @@ class _PreGameScreenState extends ConsumerState<PreGameScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: ResponsiveLayout.contentPadding(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

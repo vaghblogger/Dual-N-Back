@@ -127,8 +127,11 @@ class StatsRepository {
 
   /// Heatmap data: day of week (1 = Monday .. 7 = Sunday) -> nLevel -> average accuracy (0.0–1.0).
   /// Cells with no sessions have 0.0. Used for "When do you perform best?" premium chart.
-  Future<Map<int, Map<int, double>>> getHeatmapData() async {
-    final sessions = await getAllSessions();
+  /// [lastDays] null or 0 = all time; otherwise only sessions in the last [lastDays] days.
+  Future<Map<int, Map<int, double>>> getHeatmapData({int? lastDays}) async {
+    final sessions = (lastDays == null || lastDays <= 0)
+        ? await getAllSessions()
+        : await getSessionsInLastDays(lastDays);
     // dayOfWeek -> nLevel -> (sum accuracy, count)
     final raw = <int, Map<int, ({double sum, int count})>>{};
     for (var d = 1; d <= 7; d++) {

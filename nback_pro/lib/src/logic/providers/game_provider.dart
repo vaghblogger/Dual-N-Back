@@ -139,37 +139,35 @@ class GameSessionNotifier extends StateNotifier<GameSessionState?> {
 
   /// Returns (audioScore, visualScore, totalAccuracy) in 0.0–1.0.
   ///
-  /// Scoring rules (standard Dual N-Back):
-  /// - Not tapping = "no match". So (audio: false, visual: false) on a trial is
-  ///   correct when the trial has no audio match and no visual match.
-  /// - Tapping Audio Match = "audio match"; correct when trial is audio match.
-  /// - Tapping Visual Match = "visual match"; correct when trial is visual match.
-  /// - If the user never tapped at all in the entire session, we treat that as
-  ///   no engagement and return 0% (avoids inflating score by doing nothing).
+  /// Accuracy is based only on trials where a tap was required (i.e. there was
+  /// a match). Non-match trials are excluded so that "no tap when nothing
+  /// matched" does not inflate the score.
+  /// - Audio: (trials with audio match where user tapped) / (trials with audio match).
+  /// - Visual: (trials with visual match where user tapped) / (trials with visual match).
+  /// - If there are no match trials for a channel, that channel's score is 0.
   (double, double, double) calculateScore() {
     final s = state;
     if (s == null || s.trials.isEmpty) return (0.0, 0.0, 0.0);
-    final total = s.trials.length;
-    final anyTap = s.responses.any((r) => r.audio || r.visual);
-    if (!anyTap) {
-      // No tap in entire session: no engagement, do not inflate score
-      return (0.0, 0.0, 0.0);
-    }
-    int audioCorrect = 0;
-    int visualCorrect = 0;
-    for (int i = 0; i < total; i++) {
+    int audioMatchCount = 0;
+    int audioHits = 0;
+    int visualMatchCount = 0;
+    int visualHits = 0;
+    for (int i = 0; i < s.trials.length; i++) {
       final t = s.trials[i];
       final r = s.responses[i];
-      // Correct = (said match and was match) OR (said no match and was no match)
-      if ((r.audio && t.isAudioMatch) || (!r.audio && !t.isAudioMatch)) {
-        audioCorrect++;
+      if (t.isAudioMatch) {
+        audioMatchCount++;
+        if (r.audio) audioHits++;
       }
-      if ((r.visual && t.isVisualMatch) || (!r.visual && !t.isVisualMatch)) {
-        visualCorrect++;
+      if (t.isVisualMatch) {
+        visualMatchCount++;
+        if (r.visual) visualHits++;
       }
     }
-    final audioScore = total > 0 ? audioCorrect / total : 0.0;
-    final visualScore = total > 0 ? visualCorrect / total : 0.0;
+    final audioScore =
+        audioMatchCount > 0 ? audioHits / audioMatchCount : 0.0;
+    final visualScore =
+        visualMatchCount > 0 ? visualHits / visualMatchCount : 0.0;
     final totalAccuracy = (audioScore + visualScore) / 2;
     return (audioScore, visualScore, totalAccuracy);
   }

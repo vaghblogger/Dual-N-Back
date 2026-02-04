@@ -67,8 +67,9 @@ final sessionsInLastDaysProvider =
 });
 
 /// Heatmap: day of week (1–7) -> nLevel -> avg accuracy. Premium only.
+/// [days] 0 or null = all time, 30 = last 30 days, 90 = last 90 days.
 final heatmapDataProvider =
-    FutureProvider<Map<int, Map<int, double>>>((ref) async {
+    FutureProvider.family<Map<int, Map<int, double>>, int>((ref, days) async {
   final repo = ref.watch(statsRepositoryProvider);
-  return repo.getHeatmapData();
+  return repo.getHeatmapData(lastDays: days == 0 ? null : days);
 });

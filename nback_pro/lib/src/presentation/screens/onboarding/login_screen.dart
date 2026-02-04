@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_strings.dart';
+import '../../../core/utils/responsive_layout.dart';
 import '../../../data/repositories/settings_repository.dart';
 import '../../../data/repositories/stats_repository.dart';
 import '../../../data/services/sync_service.dart';
@@ -22,7 +23,7 @@ class LoginScreen extends ConsumerWidget {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: ResponsiveLayout.contentPadding(context),
           child: Column(
             children: [
               const Spacer(flex: 2),

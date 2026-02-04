@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_strings.dart';
+import '../../../core/utils/responsive_layout.dart';
 import '../../../logic/providers/game_provider.dart';
 import '../../../logic/providers/settings_provider.dart';
 import '../../../logic/providers/stats_provider.dart';
@@ -63,7 +64,7 @@ class HomeScreen extends ConsumerWidget {
         ],
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(MediaQuery.sizeOf(context).width < 360 ? 12 : 16),
+        padding: ResponsiveLayout.contentPadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -389,7 +390,7 @@ class _WeeklyStreakCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final completed = last7DaysAsync.valueOrNull ?? List.filled(7, false);
-    final padding = MediaQuery.sizeOf(context).width < 360 ? 12.0 : 16.0;
+    final padding = ResponsiveLayout.horizontalPadding(context);
     return Card(
       child: Padding(
         padding: EdgeInsets.all(padding),
