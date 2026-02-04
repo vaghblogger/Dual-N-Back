@@ -33,7 +33,10 @@ class _TrainScreenState extends ConsumerState<TrainScreen> {
 
   Future<void> _onStartTapped() async {
     final isPremium = ref.read(isPremiumProvider);
-    if (!isPremium && _selectedN >= 4) {
+    final settings = ref.read(settingsProvider).valueOrNull;
+    final isAutoN = isPremium ? (settings?.isAutoN ?? true) : true;
+    final nToUse = isAutoN ? _selectedN : (settings?.manualN ?? 1).clamp(_minN, isPremium ? _maxN : _freeMaxN);
+    if (!isPremium && nToUse >= 4) {
       showPaywallDialog(
         context,
         paywallContext: PaywallContext.train,
@@ -52,12 +55,16 @@ class _TrainScreenState extends ConsumerState<TrainScreen> {
   }
 
   void _startSession() {
+    final settings = ref.read(settingsProvider).valueOrNull;
+    final isPremium = ref.read(isPremiumProvider);
+    final isAutoN = isPremium ? (settings?.isAutoN ?? true) : true;
+    final nToUse = isAutoN ? _selectedN : (settings?.manualN ?? 1).clamp(_minN, isPremium ? _maxN : _freeMaxN);
     ref.read(sessionOverridesProvider.notifier).state = SessionOverrides(
       speedMultiplier: _sessionSpeed,
       showGrid: _sessionShowGrid,
     );
-    ref.read(currentNProvider.notifier).state = _selectedN;
-    context.go('/pre-game', extra: {'n': _selectedN});
+    ref.read(currentNProvider.notifier).state = nToUse;
+    context.go('/pre-game', extra: {'n': nToUse});
   }
 
   int _speedIndex(double v) {
@@ -93,17 +100,27 @@ class _TrainScreenState extends ConsumerState<TrainScreen> {
         }
       });
     }
+    final isAutoN = isPremium ? (settings?.isAutoN ?? true) : true;
+    final manualN = (settings?.manualN ?? 1).clamp(_minN, isPremium ? _maxN : _freeMaxN);
     if (!_nInitialized) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
         final s = ref.read(settingsProvider).valueOrNull;
-        final isAutoN = isPremium ? (s?.isAutoN ?? true) : true;
-        final initialN = isAutoN
-            ? ref.read(currentNProvider).clamp(_minN, _maxN)
-            : (s?.manualN ?? 1).clamp(_minN, _maxN);
+        final autoN = isPremium ? (s?.isAutoN ?? true) : true;
         final maxNForUser = isPremium ? _maxN : _freeMaxN;
+        if (!autoN && s != null) {
+          setState(() {
+            _selectedN = (s.manualN).clamp(_minN, maxNForUser);
+            _nInitialized = true;
+          });
+          return;
+        }
+        final highestN = await ref.read(highestNProvider.future);
+        if (!mounted) return;
+        final defaultN = (highestN + 1).clamp(_minN, maxNForUser);
+        if (!mounted) return;
         setState(() {
-          _selectedN = initialN.clamp(_minN, maxNForUser);
+          _selectedN = defaultN;
           _nInitialized = true;
         });
       });
@@ -119,6 +136,13 @@ class _TrainScreenState extends ConsumerState<TrainScreen> {
           AppStrings.trainYourBrain,
           style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            iconSize: 28,
+            onPressed: () => context.go('/settings'),
+          ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -151,6 +175,16 @@ class _TrainScreenState extends ConsumerState<TrainScreen> {
                   textAlign: TextAlign.center,
                 ),
               ],
+              if (settings != null && isPremium && !settings.isAutoN) ...[
+                const SizedBox(height: 4),
+                Text(
+                  AppStrings.proTrainingMyNMessage,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -158,31 +192,34 @@ class _TrainScreenState extends ConsumerState<TrainScreen> {
                   IconButton.filled(
                     icon: const Icon(Icons.remove),
                     iconSize: 32,
-                    onPressed: _selectedN > _minN
+                    onPressed: isAutoN && _selectedN > _minN
                         ? () => setState(() => _selectedN--)
                         : null,
                   ),
                   const SizedBox(width: 24),
                   Text(
-                    'N = $_selectedN',
+                    'N = ${isAutoN ? _selectedN : manualN}',
                     style: theme.textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: isAutoN ? null : theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(width: 24),
                   IconButton.filled(
                     icon: const Icon(Icons.add),
                     iconSize: 32,
-                    onPressed: () {
-                      if (_selectedN < maxNForUser) {
-                        setState(() => _selectedN++);
-                      } else if (!isPremium && _selectedN == _freeMaxN) {
-                        showPaywallDialog(
-                          context,
-                          paywallContext: PaywallContext.train,
-                        );
-                      }
-                    },
+                    onPressed: isAutoN
+                        ? () {
+                            if (_selectedN < maxNForUser) {
+                              setState(() => _selectedN++);
+                            } else if (!isPremium && _selectedN == _freeMaxN) {
+                              showPaywallDialog(
+                                context,
+                                paywallContext: PaywallContext.train,
+                              );
+                            }
+                          }
+                        : null,
                   ),
                 ],
               ),

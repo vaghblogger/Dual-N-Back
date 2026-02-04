@@ -67,6 +67,9 @@ class AppStrings {
   static const String autoNAdjustAfterSession = 'Auto N will adjust after each session.';
   /// Pro Training: "Auto N will adjust after this session."
   static const String autoNAdjustAfterThisSession = 'Auto N will adjust after this session.';
+  /// Pro Training (My N): message when N selection is disabled.
+  static const String proTrainingMyNMessage =
+      'Using your selected N level from Settings (My N). Change it in Settings to train at a different level.';
   /// Daily Challenge optional: "Recommended: N-Back X"
   static const String recommendedN = 'Recommended: N-Back %d';
 

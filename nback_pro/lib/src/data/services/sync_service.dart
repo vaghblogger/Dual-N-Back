@@ -94,7 +94,7 @@ class SyncService {
       final merged = <SessionResult>[];
       for (final s in [...serverSessions, ...localSessions]) {
         final key =
-            '${s.date.toIso8601String()}_${s.nLevel}_${s.accuracy.toStringAsFixed(2)}';
+            '${s.date.millisecondsSinceEpoch ~/ 60000}_${s.nLevel}_${s.accuracy.toStringAsFixed(2)}';
         if (seen.add(key)) merged.add(s);
       }
       merged.sort((a, b) => b.date.compareTo(a.date));
