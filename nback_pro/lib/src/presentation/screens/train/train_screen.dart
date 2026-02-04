@@ -79,6 +79,8 @@ class _TrainScreenState extends ConsumerState<TrainScreen> {
     final theme = Theme.of(context);
     final isPremium = ref.watch(isPremiumProvider);
     final maxNForUser = isPremium ? _maxN : _freeMaxN;
+    final highestNAsync = ref.watch(highestNProvider);
+    final highestN = highestNAsync.valueOrNull ?? 0;
     final settings = ref.watch(settingsProvider).valueOrNull;
     if (settings != null && !_initializedFromSettings) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -93,14 +95,17 @@ class _TrainScreenState extends ConsumerState<TrainScreen> {
     }
     if (!_nInitialized) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          final currentN = ref.read(currentNProvider).clamp(_minN, _maxN);
-          final maxNForUser = isPremium ? _maxN : _freeMaxN;
-          setState(() {
-            _selectedN = currentN.clamp(_minN, maxNForUser);
-            _nInitialized = true;
-          });
-        }
+        if (!mounted) return;
+        final s = ref.read(settingsProvider).valueOrNull;
+        final isAutoN = isPremium ? (s?.isAutoN ?? true) : true;
+        final initialN = isAutoN
+            ? ref.read(currentNProvider).clamp(_minN, _maxN)
+            : (s?.manualN ?? 1).clamp(_minN, _maxN);
+        final maxNForUser = isPremium ? _maxN : _freeMaxN;
+        setState(() {
+          _selectedN = initialN.clamp(_minN, maxNForUser);
+          _nInitialized = true;
+        });
       });
     }
 
@@ -123,19 +128,29 @@ class _TrainScreenState extends ConsumerState<TrainScreen> {
             children: [
               const SizedBox(height: 16),
               Text(
-                AppStrings.trainCurrentLevelIndicator.replaceAll('%d', '$_selectedN'),
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.primary,
+                AppStrings.currentNLevelDisplay.replaceAll('%d', '$highestN'),
+                style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
+                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 28),
               Text(
-                'N level',
+                AppStrings.nextNLevel,
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
+              if (settings != null && isPremium && settings.isAutoN) ...[
+                const SizedBox(height: 4),
+                Text(
+                  AppStrings.autoNAdjustAfterThisSession,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,

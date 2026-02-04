@@ -44,7 +44,6 @@ class SettingsScreen extends ConsumerWidget {
 
     final settingsAsync = ref.watch(settingsProvider);
     final currentUser = ref.watch(currentUserProvider);
-
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -59,8 +58,7 @@ class SettingsScreen extends ConsumerWidget {
         data: (settings) {
           final isPremium = ref.watch(isPremiumProvider);
           final maxManualN = isPremium ? 15 : 1;
-          final effectiveManualN =
-              isPremium ? settings.manualN : 1;
+          final displayN = (isPremium ? settings.manualN : 1).clamp(1, maxManualN);
           final isLoggedIn = currentUser != null;
           final user = currentUser;
           final accountSubtitle = isLoggedIn && user != null
@@ -215,24 +213,24 @@ class SettingsScreen extends ConsumerWidget {
                       children: [
                         IconButton(
                           icon: const Icon(Icons.remove),
-                          onPressed: !settings.isAutoN && effectiveManualN > 1
+                          onPressed: !settings.isAutoN && displayN > 1
                               ? () => ref.read(settingsProvider.notifier).setManualN(
-                                  (effectiveManualN - 1).clamp(1, maxManualN))
+                                  (displayN - 1).clamp(1, maxManualN))
                               : null,
                         ),
                         SizedBox(
                           width: 48,
                           child: Text(
-                            'N = $effectiveManualN',
+                            'N = $displayN',
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                         ),
                         IconButton(
                           icon: const Icon(Icons.add),
-                          onPressed: !settings.isAutoN && effectiveManualN < maxManualN
+                          onPressed: !settings.isAutoN && displayN < maxManualN
                               ? () => ref.read(settingsProvider.notifier).setManualN(
-                                  (effectiveManualN + 1).clamp(1, maxManualN))
+                                  (displayN + 1).clamp(1, maxManualN))
                               : null,
                         ),
                       ],
@@ -243,7 +241,7 @@ class SettingsScreen extends ConsumerWidget {
                         Icon(Icons.lock, color: Theme.of(context).colorScheme.onSurfaceVariant),
                         const SizedBox(width: 8),
                         Text(
-                          'N = $effectiveManualN',
+                          'N = $displayN',
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                       ],

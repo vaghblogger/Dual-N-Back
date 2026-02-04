@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_strings.dart';
 import '../../../logic/providers/game_provider.dart';
+import '../../../logic/providers/settings_provider.dart';
 import '../../../logic/providers/stats_provider.dart';
 import '../../../logic/providers/subscription_provider.dart';
 import '../../widgets/paywall_dialog.dart';
@@ -18,9 +19,21 @@ class HomeScreen extends ConsumerWidget {
     final currentN = ref.watch(currentNProvider);
     final highestNAsync = ref.watch(highestNProvider);
     final highestN = highestNAsync.valueOrNull ?? currentN;
+    final settings = ref.watch(settingsProvider).valueOrNull;
+    final isPremium = ref.watch(isPremiumProvider);
+    final isAutoN = isPremium ? (settings?.isAutoN ?? true) : true;
+    final manualN = isPremium ? (settings?.manualN ?? 1) : 1;
     final streakAsync = ref.watch(currentStreakProvider);
     final isCompleteTodayAsync = ref.watch(isChallengeCompleteTodayProvider);
     final last7DaysAsync = ref.watch(last7DaysCompletedProvider);
+
+    if (isPremium && !isAutoN && settings != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (ref.read(currentNProvider) != manualN) {
+          ref.read(currentNProvider.notifier).state = manualN;
+        }
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -56,28 +69,20 @@ class HomeScreen extends ConsumerWidget {
           children: [
             const SizedBox(height: 16),
             Text(
-              AppStrings.currentLevel.replaceAll('%d', '$highestN'),
+              AppStrings.currentNLevelDisplay.replaceAll('%d', '$highestN'),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
               textAlign: TextAlign.center,
             ),
-            if (highestN > 0 && currentN < highestN) ...[
-              const SizedBox(height: 4),
-              Text(
-                AppStrings.playingAt.replaceAll('%d', '$currentN'),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-            ],
             const SizedBox(height: 24),
             _WeeklyStreakCard(last7DaysAsync: last7DaysAsync),
             const SizedBox(height: 24),
             _DailyChallengeCard(
               currentN: currentN,
               highestN: highestN,
+              isAutoN: isAutoN,
+              manualN: manualN,
               streakAsync: streakAsync,
               isCompleteTodayAsync: isCompleteTodayAsync,
               onStart: (n) => _startGame(context, ref, n),
@@ -117,6 +122,8 @@ class _DailyChallengeCard extends StatefulWidget {
   const _DailyChallengeCard({
     required this.currentN,
     required this.highestN,
+    required this.isAutoN,
+    required this.manualN,
     required this.streakAsync,
     required this.isCompleteTodayAsync,
     required this.onStart,
@@ -124,6 +131,8 @@ class _DailyChallengeCard extends StatefulWidget {
 
   final int currentN;
   final int highestN;
+  final bool isAutoN;
+  final int manualN;
   final AsyncValue<int> streakAsync;
   final AsyncValue<bool> isCompleteTodayAsync;
   final void Function(int n) onStart;
@@ -137,16 +146,26 @@ class _DailyChallengeCardState extends State<_DailyChallengeCard> {
 
   int get _maxN => widget.highestN < 1 ? 1 : widget.highestN.clamp(1, 15);
 
+  int get _defaultN => widget.isAutoN
+      ? widget.currentN.clamp(1, _maxN)
+      : widget.manualN.clamp(1, _maxN);
+
   @override
   void initState() {
     super.initState();
-    _selectedN = widget.currentN.clamp(1, _maxN);
+    _selectedN = _defaultN;
   }
 
   @override
   void didUpdateWidget(covariant _DailyChallengeCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _selectedN = _selectedN.clamp(1, _maxN);
+    if (oldWidget.isAutoN != widget.isAutoN ||
+        oldWidget.manualN != widget.manualN ||
+        oldWidget.currentN != widget.currentN) {
+      _selectedN = _defaultN;
+    } else {
+      _selectedN = _selectedN.clamp(1, _maxN);
+    }
   }
 
   @override
@@ -193,6 +212,16 @@ class _DailyChallengeCardState extends State<_DailyChallengeCard> {
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 4),
+              if (widget.isAutoN) ...[
+                Text(
+                  AppStrings.recommendedN.replaceAll('%d', '${widget.currentN}'),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                ),
+                const SizedBox(height: 4),
+              ],
               Text(
                 AppStrings.dailyChallengeChooseLevelUpTo
                     .replaceAll('%d', '$maxN'),

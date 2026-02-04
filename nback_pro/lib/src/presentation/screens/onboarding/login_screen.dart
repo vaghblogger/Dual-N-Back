@@ -95,6 +95,8 @@ class LoginScreen extends ConsumerWidget {
       ref.invalidate(isGuestProvider);
       ref.invalidate(onboardingCompleteProvider);
       final storageId = user.uid.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_');
+      final userSettingsRepo = SettingsRepository(storageId);
+      final userStatsRepo = StatsRepository(storageId);
       final sync = SyncService();
       if (wasGuest) {
         final guestSettingsRepo = SettingsRepository('guest');
@@ -102,21 +104,22 @@ class LoginScreen extends ConsumerWidget {
         try {
           final settings = await guestSettingsRepo.getSettings();
           await sync.pushSettings(user.uid, settings);
+          await userSettingsRepo.saveSettings(settings);
           final streak = await guestStatsRepo.getStreak();
           await sync.pushStreak(user.uid, streak);
+          await userStatsRepo.saveStreak(streak);
           final sessions = await guestStatsRepo.getAllSessions();
           for (final session in sessions) {
             await sync.pushSession(user.uid, session);
+          }
+          if (sessions.isNotEmpty) {
+            await userStatsRepo.replaceAllSessions(sessions);
           }
         } catch (_) {
           // Merge best-effort; continue with pull
         }
       }
-      await sync.pull(
-        user.uid,
-        SettingsRepository(storageId),
-        StatsRepository(storageId),
-      );
+      await sync.pull(user.uid, userSettingsRepo, userStatsRepo);
       if (!context.mounted) return;
       _invalidateUserDataProviders(ref);
       context.go('/home');
@@ -156,6 +159,8 @@ class LoginScreen extends ConsumerWidget {
       ref.invalidate(isGuestProvider);
       ref.invalidate(onboardingCompleteProvider);
       final storageId = user.uid.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_');
+      final userSettingsRepo = SettingsRepository(storageId);
+      final userStatsRepo = StatsRepository(storageId);
       final sync = SyncService();
       if (wasGuest) {
         final guestSettingsRepo = SettingsRepository('guest');
@@ -163,19 +168,20 @@ class LoginScreen extends ConsumerWidget {
         try {
           final settings = await guestSettingsRepo.getSettings();
           await sync.pushSettings(user.uid, settings);
+          await userSettingsRepo.saveSettings(settings);
           final streak = await guestStatsRepo.getStreak();
           await sync.pushStreak(user.uid, streak);
+          await userStatsRepo.saveStreak(streak);
           final sessions = await guestStatsRepo.getAllSessions();
           for (final session in sessions) {
             await sync.pushSession(user.uid, session);
           }
+          if (sessions.isNotEmpty) {
+            await userStatsRepo.replaceAllSessions(sessions);
+          }
         } catch (_) {}
       }
-      await sync.pull(
-        user.uid,
-        SettingsRepository(storageId),
-        StatsRepository(storageId),
-      );
+      await sync.pull(user.uid, userSettingsRepo, userStatsRepo);
       if (!context.mounted) return;
       _invalidateUserDataProviders(ref);
       context.go('/home');

@@ -7,11 +7,17 @@ import '../../logic/providers/onboarding_provider.dart';
 import '../../logic/providers/settings_provider.dart';
 import '../../logic/providers/stats_provider.dart';
 import 'notification_service.dart';
+import 'sync_service.dart';
 
 /// Performs a full app reset: clears all local data (Hive, SharedPreferences),
-/// signs out, cancels daily reminder, and invalidates providers so the app
-/// behaves like a fresh installation. Call this then navigate to '/' (onboarding).
+/// deletes cloud data if signed in, signs out, cancels daily reminder, and
+/// invalidates providers so the app behaves like a fresh installation.
 Future<void> resetApp(WidgetRef ref) async {
+  final user = ref.read(currentUserProvider);
+  if (user != null) {
+    await SyncService().deleteUserData(user.uid);
+  }
+
   final settingsRepo = ref.read(settingsRepositoryProvider);
   final statsRepo = ref.read(statsRepositoryProvider);
   await settingsRepo.closeAndDeleteAll();

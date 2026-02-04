@@ -34,11 +34,12 @@ class SettingsRepository {
 
   /// Closes and deletes the settings box from disk. Use for full app reset.
   /// Callers must invalidate settings-related providers after this.
+  /// Deletes by name so data is cleared even if box was never opened this session.
   Future<void> closeAndDeleteAll() async {
     if (_box != null) {
       await _box!.close();
-      await Hive.deleteBoxFromDisk(_settingsBoxName);
       _box = null;
     }
+    await Hive.deleteBoxFromDisk(_settingsBoxName);
   }
 }

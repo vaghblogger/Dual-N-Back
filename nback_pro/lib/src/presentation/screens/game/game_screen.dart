@@ -540,6 +540,19 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                       session.totalTrials
                   : 0,
             ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                AppStrings.nextLevelDisplay.replaceAll(
+                  '%d',
+                  '${(session.nLevel + 1).clamp(1, 16)}',
+                ),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
             Expanded(
               child: Center(
                 child: RepaintBoundary(

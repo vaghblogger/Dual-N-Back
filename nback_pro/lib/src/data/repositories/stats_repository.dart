@@ -206,16 +206,17 @@ class StatsRepository {
 
   /// Closes and deletes sessions and streak boxes from disk. Use for full app reset.
   /// Callers must invalidate stats-related providers after this.
+  /// Deletes by name so data is cleared even if boxes were never opened this session.
   Future<void> closeAndDeleteAll() async {
     if (_sessionsBox != null) {
       await _sessionsBox!.close();
-      await Hive.deleteBoxFromDisk(_sessionsBoxName);
       _sessionsBox = null;
     }
+    await Hive.deleteBoxFromDisk(_sessionsBoxName);
     if (_streakBox != null) {
       await _streakBox!.close();
-      await Hive.deleteBoxFromDisk(_streakBoxName);
       _streakBox = null;
     }
+    await Hive.deleteBoxFromDisk(_streakBoxName);
   }
 }

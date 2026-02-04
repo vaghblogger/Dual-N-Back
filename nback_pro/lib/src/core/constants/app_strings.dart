@@ -53,8 +53,22 @@ class AppStrings {
   static const String stats = 'Stats';
   static const String settings = 'Settings';
   static const String currentLevel = 'Current Level: N-Back %d';
+  /// Display format for "Current N Level: X" (highest N achieved). Used on home, settings, Pro Training.
+  static const String currentNLevelDisplay = 'Current N Level: %d';
   static const String playingAt = 'Playing at: N-Back %d';
   static const String trainCurrentLevelIndicator = 'Current Level = N-Back %d';
+  /// Label for the N level you are selecting to train at (Pro Training).
+  static const String nextNLevel = 'Next N Level';
+  /// Display on game screen: "Next Level: X" where X = current N Level + 1.
+  static const String nextLevelDisplay = 'Next Level: %d';
+  /// Home: "Next session: N-Back X" when Auto N is ON.
+  static const String nextSessionDisplay = 'Next session: N-Back %d';
+  /// Home optional: "Auto N will adjust after each session."
+  static const String autoNAdjustAfterSession = 'Auto N will adjust after each session.';
+  /// Pro Training: "Auto N will adjust after this session."
+  static const String autoNAdjustAfterThisSession = 'Auto N will adjust after this session.';
+  /// Daily Challenge optional: "Recommended: N-Back X"
+  static const String recommendedN = 'Recommended: N-Back %d';
 
   // Tutorial / Help
   static const String helpHubTitle = 'How to play';

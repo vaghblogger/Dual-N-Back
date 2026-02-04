@@ -65,7 +65,16 @@ class SyncService {
         }
         final streakMap = data['streak'] as Map<String, dynamic>?;
         if (streakMap != null) {
-          await statsRepo.saveStreak(UserStreak.fromMap(streakMap));
+          final serverStreak = UserStreak.fromMap(streakMap);
+          final localStreak = await statsRepo.getStreak();
+          final useServer = serverStreak.lastCompletedDate != null &&
+              (localStreak.lastCompletedDate == null ||
+                  (serverStreak.lastCompletedDate!
+                          .isAfter(localStreak.lastCompletedDate!) &&
+                      serverStreak.currentStreak >= localStreak.currentStreak));
+          if (useServer) {
+            await statsRepo.saveStreak(serverStreak);
+          }
         }
       }
 
@@ -76,11 +85,21 @@ class SyncService {
           .orderBy('date', descending: true)
           .get();
 
-      final sessions = sessionsSnap.docs
+      final serverSessions = sessionsSnap.docs
           .map((d) => SessionResult.fromMap(d.data()))
           .toList();
-      if (sessions.isNotEmpty) {
-        await statsRepo.replaceAllSessions(sessions);
+
+      final localSessions = await statsRepo.getAllSessions();
+      final seen = <String>{};
+      final merged = <SessionResult>[];
+      for (final s in [...serverSessions, ...localSessions]) {
+        final key =
+            '${s.date.toIso8601String()}_${s.nLevel}_${s.accuracy.toStringAsFixed(2)}';
+        if (seen.add(key)) merged.add(s);
+      }
+      merged.sort((a, b) => b.date.compareTo(a.date));
+      if (merged.isNotEmpty) {
+        await statsRepo.replaceAllSessions(merged);
       }
     } catch (e) {
       // #region agent log
@@ -151,6 +170,24 @@ class SyncService {
           .doc(uid)
           .collection('sessions')
           .add(session.toMap());
+    } catch (e) {
+      if (_isDatabaseMissing(e)) _firestoreUnavailable = true;
+    }
+  }
+
+  /// Deletes all cloud data for the user (settings, streak, sessions). Call before sign-out on reset.
+  Future<void> deleteUserData(String uid) async {
+    if (_firestoreUnavailable) return;
+    try {
+      final sessionsSnap = await _firestore
+          .collection('users')
+          .doc(uid)
+          .collection('sessions')
+          .get();
+      for (final doc in sessionsSnap.docs) {
+        await doc.reference.delete();
+      }
+      await _firestore.collection('users').doc(uid).delete();
     } catch (e) {
       if (_isDatabaseMissing(e)) _firestoreUnavailable = true;
     }

@@ -67,3 +67,5 @@
 {"sessionId":"debug-session","hypothesisId":"A,D,E","location":"sync_service.dart:pull","message":"pull before get","data":{"uid":"6PSXb2PNqLfhNSi5QR3Su1LesDp2"},"timestamp":1770139059915}
 {"sessionId":"debug-session","hypothesisId":"B,C","location":"sync_service.dart:pull","message":"pull entry","data":{"uid":"6PSXb2PNqLfhNSi5QR3Su1LesDp2","authUid":"6PSXb2PNqLfhNSi5QR3Su1LesDp2","databaseId":"nbackpro"},"timestamp":1770139356044}
 {"sessionId":"debug-session","hypothesisId":"A,D,E","location":"sync_service.dart:pull","message":"pull before get","data":{"uid":"6PSXb2PNqLfhNSi5QR3Su1LesDp2"},"timestamp":1770139356050}
+{"sessionId":"debug-session","hypothesisId":"B,C","location":"sync_service.dart:pull","message":"pull entry","data":{"uid":"6PSXb2PNqLfhNSi5QR3Su1LesDp2","authUid":"6PSXb2PNqLfhNSi5QR3Su1LesDp2","databaseId":"nbackpro"},"timestamp":1770209943918}
+{"sessionId":"debug-session","hypothesisId":"A,D,E","location":"sync_service.dart:pull","message":"pull before get","data":{"uid":"6PSXb2PNqLfhNSi5QR3Su1LesDp2"},"timestamp":1770209943923}

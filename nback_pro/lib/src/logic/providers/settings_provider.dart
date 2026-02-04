@@ -5,6 +5,7 @@ import '../../data/models/user_settings.dart';
 import '../../data/repositories/settings_repository.dart';
 import '../../data/services/sync_service.dart';
 import 'auth_provider.dart';
+import 'game_provider.dart';
 
 final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
   final userId = ref.watch(currentStorageUserIdProvider);
@@ -110,6 +111,9 @@ class SettingsNotifier extends AsyncNotifier<UserSettings> {
     await ref.read(settingsRepositoryProvider).saveSettings(updated);
     await _pushSettingsIfSignedIn(updated);
     state = AsyncData(updated);
+    if (!updated.isAutoN) {
+      ref.read(currentNProvider.notifier).state = updated.manualN;
+    }
   }
 
   Future<void> setManualN(int n) async {
@@ -128,6 +132,9 @@ class SettingsNotifier extends AsyncNotifier<UserSettings> {
     await ref.read(settingsRepositoryProvider).saveSettings(updated);
     await _pushSettingsIfSignedIn(updated);
     state = AsyncData(updated);
+    if (!updated.isAutoN) {
+      ref.read(currentNProvider.notifier).state = updated.manualN;
+    }
   }
 
   Future<void> setSpeedMultiplier(double multiplier) async {
