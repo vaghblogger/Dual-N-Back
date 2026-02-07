@@ -2,12 +2,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/subscription_state.dart';
+import 'iap_service_provider.dart';
 
-/// Real subscription/lifetime state. Until IAP is integrated, always [SubscriptionState.free].
-/// When integrating: query subscription status + lifetime product ownership; return
-/// premiumActive if either is active/owned, premiumExpired if sub expired and no lifetime, else free.
+/// Real subscription/lifetime state from IAP (purchases and restore).
+/// When IAP is unavailable or not yet loaded, returns [SubscriptionState.free].
 final subscriptionStateProvider = Provider<SubscriptionState>((ref) {
-  return SubscriptionState.free;
+  final async = ref.watch(iapSubscriptionStateProvider);
+  return async.valueOrNull ?? ref.read(iapServiceProvider).state;
 });
 
 /// Developer-only override. When non-null, feature gates use this instead of real state.

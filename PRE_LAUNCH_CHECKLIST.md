@@ -2,18 +2,20 @@
 
 Use this list before submitting **Dual N-Back Pro** to Google Play Store and Apple App Store. Tick each item when done.
 
+**Pending (high level):** Create IAP products (iOS + Android), configure Android release signing, add iOS to Firebase (see `nback_pro/docs/FIREBASE_IOS_SETUP.md`), complete store listings and upload builds.
+
 ---
 
 ## Critical (must do)
 
 ### 1. In-App Purchase (IAP)
 
-- [ ] Add IAP Flutter package (e.g. `in_app_purchase`) to `pubspec.yaml`.
+- [x] Add IAP Flutter package (e.g. `in_app_purchase`) to `pubspec.yaml`.
 - [ ] **iOS:** In App Store Connect, create In-App Purchase products (e.g. Pro Monthly, Pro Yearly, optional Lifetime). Enable In-App Purchase in Xcode for the app target.
 - [ ] **Android:** In Play Console, create the same subscription products and configure billing.
-- [ ] In app: replace hardcoded `SubscriptionState.free` in `subscription_provider.dart` with real purchase status from the IAP plugin.
-- [ ] In app: wire paywall “Monthly”, “Yearly”, “Lifetime” buttons to the plugin’s purchase flow.
-- [ ] In app: wire “Restore purchases” to the plugin’s restore and refresh subscription state.
+- [x] In app: replace hardcoded `SubscriptionState.free` in `subscription_provider.dart` with real purchase status from the IAP plugin.
+- [x] In app: wire paywall “Monthly”, “Yearly”, “Lifetime” buttons to the plugin’s purchase flow.
+- [x] In app: wire “Restore purchases” to the plugin’s restore and refresh subscription state.
 - [ ] Test purchase and restore on iOS (sandbox) and Android (test account).
 
 *Ref: [COMPLIANCE_IMPLEMENTATION_PLAN.md](COMPLIANCE_IMPLEMENTATION_PLAN.md) § 2, [PaymentGateway.md](PaymentGateway.md).*
@@ -24,6 +26,7 @@ Use this list before submitting **Dual N-Back Pro** to Google Play Store and App
 
 - [x] In Firebase Console, add an Android app with package name `com.vaghblogger.nback_pro` (if not already).
 - [x] Download the new `google-services.json` and replace `nback_pro/android/app/google-services.json` if the current file was for the old package.
+- [ ] **iOS (if shipping on App Store):** Add an iOS app in Firebase with your bundle ID, download `GoogleService-Info.plist`, place in `ios/Runner/`, and add to the Runner target in Xcode — see `nback_pro/docs/FIREBASE_IOS_SETUP.md`.
 
 ---
 
@@ -31,8 +34,8 @@ Use this list before submitting **Dual N-Back Pro** to Google Play Store and App
 
 ### 3. Android: notification permission (Android 13+)
 
-- [ ] Add `<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>` to `nback_pro/android/app/src/main/AndroidManifest.xml` (if not already present).
-- [ ] Confirm the app requests notification permission when the user enables the daily reminder (e.g. via `notification_service.requestPermissions()`).
+- [x] Add `<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>` to `nback_pro/android/app/src/main/AndroidManifest.xml` (if not already present).
+- [x] Confirm the app requests notification permission when the user enables the daily reminder (e.g. via `notification_service.requestPermissions()`).
 
 *Ref: [COMPLIANCE_IMPLEMENTATION_PLAN.md](COMPLIANCE_IMPLEMENTATION_PLAN.md) § 4.*
 
@@ -47,7 +50,7 @@ Use this list before submitting **Dual N-Back Pro** to Google Play Store and App
 - [ ] Set **Age Rating** (questionnaire).
 - [ ] Add **Support URL** and/or contact (e.g. `vaghblogger@gmail.com` or a support page).
 - [ ] Fill in **metadata**: app name, subtitle, description, keywords, screenshots, icon.
-- [ ] Ensure **Sign in with Apple** capability is enabled for the App ID in Apple Developer portal and in Xcode.
+- [ ] Ensure **Sign in with Apple** is enabled for your App ID in **Apple Developer portal** (requires paid Apple Developer Program): Certificates, Identifiers & Profiles → Identifiers → select your App ID → enable "Sign in with Apple". The `ios/Runner/Runner.entitlements` file exists but is **not** in the build so you can use a free Apple ID for development; re-enable in Xcode when you join the paid program — see `nback_pro/docs/IOS_SIGN_IN_WITH_APPLE.md`.
 - [ ] Upload build (Archive and distribute via Xcode or CI).
 
 *Ref: [STORE_COMPLIANCE_REVIEW.md](STORE_COMPLIANCE_REVIEW.md) Apple section.*
@@ -56,6 +59,7 @@ Use this list before submitting **Dual N-Back Pro** to Google Play Store and App
 
 ## Play Console (Google)
 
+- [ ] Configure **Android release signing**: create or use a keystore and set `signingConfig` for the `release` build in `android/app/build.gradle.kts` (see [Flutter doc](https://docs.flutter.dev/deployment/android#signing-the-app)).
 - [ ] Create the app in Play Console (if not already).
 - [ ] Set **Privacy policy** URL to: `https://vaghblogger.github.io/Dual-N-Back/privacy-policy.html`
 - [ ] Complete **Data safety** form: declare what data you collect (account IDs, app data like settings/progress), and that you share with Firebase/Google. Align with your [privacy policy](https://vaghblogger.github.io/Dual-N-Back/privacy-policy.html).
@@ -85,8 +89,13 @@ Use this list before submitting **Dual N-Back Pro** to Google Play Store and App
 | Debug HTTP in sync_service | Guarded with kDebugMode |
 | INTERNET in main Android manifest | Added |
 | Android package name | com.vaghblogger.nback_pro |
-| Sign in with Apple on iOS | Implemented |
+| Sign in with Apple on iOS | Implemented (auth + login screen). Entitlements file exists; not in build (free-account friendly). Re-enable per `nback_pro/docs/IOS_SIGN_IN_WITH_APPLE.md` when on paid program. |
 | Dev subscription override | Debug-only |
+| POST_NOTIFICATIONS in Android manifest | Added (Android 13+) |
+| Notification permission when setting daily reminder | requestPermissions() in Settings |
+| IAP package (in_app_purchase) | Added; product IDs in `lib/src/core/constants/iap_constants.dart` |
+| Subscription state from IAP | subscription_provider + IapService |
+| Paywall Monthly/Yearly/Lifetime + Restore | Wired to IAP in PaywallScreen |
 
 ---
 

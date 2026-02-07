@@ -12,6 +12,7 @@ import '../../../core/utils/responsive_layout.dart';
 import '../../../data/models/subscription_state.dart';
 import '../../../data/services/app_reset_service.dart';
 import '../../../logic/providers/auth_provider.dart';
+import '../../../logic/providers/notification_service_provider.dart';
 import '../../../logic/providers/onboarding_provider.dart';
 import '../../../logic/providers/settings_provider.dart';
 import '../../../logic/providers/stats_provider.dart';
@@ -182,6 +183,9 @@ class SettingsScreen extends ConsumerWidget {
                   initialTime: TimeOfDay.now(),
                 );
                 if (time != null && context.mounted) {
+                  final notificationService = ref.read(notificationServiceProvider);
+                  await notificationService.requestPermissions();
+                  if (!context.mounted) return;
                   final iso = '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
                   await ref.read(settingsProvider.notifier).setReminderTime(iso);
                 }

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_strings.dart';
+import '../../../core/constants/iap_constants.dart';
 import '../../../core/utils/responsive_layout.dart';
+import '../../../logic/providers/iap_service_provider.dart';
 
 /// Full-screen paywall with details. Replaces dialog for premium purchase.
 const String _defaultTitle = '';
@@ -19,7 +22,7 @@ enum PaywallContext {
   progress,
 }
 
-class PaywallScreen extends StatelessWidget {
+class PaywallScreen extends ConsumerStatefulWidget {
   const PaywallScreen({
     super.key,
     this.title,
@@ -33,22 +36,63 @@ class PaywallScreen extends StatelessWidget {
   final PaywallContext paywallContext;
   final bool fromTutorial;
 
+  @override
+  ConsumerState<PaywallScreen> createState() => _PaywallScreenState();
+}
+
+class _PaywallScreenState extends ConsumerState<PaywallScreen> {
+  bool _purchaseInProgress = false;
+  bool _restoreInProgress = false;
+
   void _dismiss(BuildContext context) {
-    if (fromTutorial) {
+    if (widget.fromTutorial) {
       context.go('/home');
     } else {
       context.pop();
     }
   }
 
+  Future<void> _buy(String productId) async {
+    if (_purchaseInProgress) return;
+    setState(() => _purchaseInProgress = true);
+    try {
+      final iap = ref.read(iapServiceProvider);
+      final ok = await iap.buy(productId);
+      if (!mounted) return;
+      if (!ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Purchase could not be started. Check store availability.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _purchaseInProgress = false);
+    }
+  }
+
+  Future<void> _restore() async {
+    if (_restoreInProgress) return;
+    setState(() => _restoreInProgress = true);
+    try {
+      final iap = ref.read(iapServiceProvider);
+      await iap.restorePurchases();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Restore finished. If you had a purchase, access is restored.')),
+      );
+    } finally {
+      if (mounted) setState(() => _restoreInProgress = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final busy = _purchaseInProgress || _restoreInProgress;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Unlock Pro'),
         leading: IconButton(
           icon: const Icon(Icons.close),
-          onPressed: () => _dismiss(context),
+          onPressed: busy ? null : () => _dismiss(context),
         ),
       ),
       body: SafeArea(
@@ -58,20 +102,20 @@ class PaywallScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 16),
-              if ((title ?? _defaultTitle).isNotEmpty)
+              if ((widget.title ?? _defaultTitle).isNotEmpty)
                 Text(
-                  title ?? _defaultTitle,
+                  widget.title ?? _defaultTitle,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                 ),
-              if ((title ?? _defaultTitle).isNotEmpty) const SizedBox(height: 12),
-              if ((message ?? _defaultMessage).isNotEmpty)
+              if ((widget.title ?? _defaultTitle).isNotEmpty) const SizedBox(height: 12),
+              if ((widget.message ?? _defaultMessage).isNotEmpty)
                 Text(
-                  message ?? _defaultMessage,
+                  widget.message ?? _defaultMessage,
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
-              if ((message ?? _defaultMessage).isNotEmpty) const SizedBox(height: 20),
+              if ((widget.message ?? _defaultMessage).isNotEmpty) const SizedBox(height: 20),
               Text(
                 AppStrings.paywallBenefitsTitle,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -88,7 +132,7 @@ class PaywallScreen extends StatelessWidget {
               _PaywallBenefit(text: AppStrings.paywallBenefitControl),
               const SizedBox(height: 24),
               FilledButton(
-                onPressed: () => _dismiss(context),
+                onPressed: busy ? null : () => _buy(IapConstants.proYearly),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
@@ -96,7 +140,7 @@ class PaywallScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               OutlinedButton(
-                onPressed: () => _dismiss(context),
+                onPressed: busy ? null : () => _buy(IapConstants.proMonthly),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
@@ -104,7 +148,7 @@ class PaywallScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               OutlinedButton(
-                onPressed: () => _dismiss(context),
+                onPressed: busy ? null : () => _buy(IapConstants.proLifetime),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
@@ -112,12 +156,12 @@ class PaywallScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               TextButton(
-                onPressed: () {},
+                onPressed: busy ? null : _restore,
                 child: const Text(_restorePurchases),
               ),
               const SizedBox(height: 32),
               TextButton(
-                onPressed: () => _dismiss(context),
+                onPressed: busy ? null : () => _dismiss(context),
                 child: const Text(AppStrings.willDoItLater),
               ),
             ],
