@@ -1,0 +1,304 @@
+/* Dual N-Back Pro – shared styles for GitHub Pages */
+
+:root {
+  --color-bg: #fafafa;
+  --color-surface: #ffffff;
+  --color-text: #1a1a1a;
+  --color-text-muted: #555;
+  --color-accent: #2563eb;
+  --color-accent-hover: #1d4ed8;
+  --color-border: #e5e7eb;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --max-width: 720px;
+  --spacing: 1.5rem;
+  --radius: 8px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  background: var(--color-bg);
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.site-header {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--spacing) 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.site-header-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--spacing);
+}
+
+.site-title {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.site-title a {
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.site-title a:hover {
+  color: var(--color-accent);
+}
+
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.site-nav a {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.site-nav a:hover {
+  color: var(--color-accent);
+}
+
+/* Main */
+main {
+  flex: 1;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: calc(var(--spacing) * 2) var(--spacing);
+  width: 100%;
+}
+
+main h1 {
+  margin-top: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+main h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 1.75rem 0 0.75rem 0;
+  color: var(--color-text);
+}
+
+main h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 1.25rem 0 0.5rem 0;
+}
+
+main p {
+  margin: 0 0 1rem 0;
+  color: var(--color-text);
+}
+
+main ul, main ol {
+  margin: 0 0 1rem 0;
+  padding-left: 1.5rem;
+}
+
+main li {
+  margin-bottom: 0.35rem;
+}
+
+main a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+main a:hover {
+  text-decoration: underline;
+}
+
+/* Section spacing for legal pages */
+.section {
+  margin-bottom: 1.5rem;
+}
+
+/* 9-grid visual for How to Play */
+.nback-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  max-width: 180px;
+  margin: 1rem 0;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 8px;
+  background: var(--color-surface);
+}
+
+.nback-grid span {
+  aspect-ratio: 1;
+  background: var(--color-bg);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.nback-grid span.highlight {
+  background: var(--color-accent);
+  color: white;
+}
+
+/* Citation list on Science page */
+.citation-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.citation-list li {
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding-left: 1rem;
+}
+
+.citation-list .authors {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.citation-list .title {
+  font-style: italic;
+  margin: 0.25rem 0;
+}
+
+.citation-list .journal-year {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.citation-list a {
+  font-size: 0.9rem;
+}
+
+/* Footer */
+.site-footer {
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  padding: var(--spacing) 0;
+  margin-top: auto;
+}
+
+.site-footer-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--spacing);
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.site-footer a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.site-footer a:hover {
+  text-decoration: underline;
+}
+
+/* Home page hero */
+.hero {
+  text-align: center;
+  padding: 2rem 0 2.5rem 0;
+}
+
+.hero h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.hero .tagline {
+  font-size: 1.1rem;
+  color: var(--color-text-muted);
+  margin-bottom: 2rem;
+}
+
+.link-cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 500px) {
+  .link-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.link-card {
+  display: block;
+  padding: 1.25rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--color-text);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.link-card:hover {
+  border-color: var(--color-accent);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+}
+
+.link-card strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.link-card span {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+/* Legal page last-updated */
+.last-updated {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  margin-bottom: 1.5rem;
+}
+
+/* Responsive: nav scroll on small screens */
+@media (max-width: 400px) {
+  .site-nav {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+}
