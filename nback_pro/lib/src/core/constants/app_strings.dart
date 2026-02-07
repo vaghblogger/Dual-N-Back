@@ -200,8 +200,11 @@ class AppStrings {
   static const String giveFeedback = 'Give Feedback';
   static const String privacyPolicy = 'Privacy Policy';
   static const String termsOfUse = 'Terms of Use';
-  static const String privacyPolicyUrl = 'https://example.com/privacy';
-  static const String termsOfUseUrl = 'https://example.com/terms';
+  /// Replace YOUR-GITHUB-USERNAME and repo name with your GitHub Pages URL (e.g. after enabling Pages from /docs).
+  static const String privacyPolicyUrl =
+      'https://YOUR-GITHUB-USERNAME.github.io/Dual-N-Back/privacy-policy.html';
+  static const String termsOfUseUrl =
+      'https://YOUR-GITHUB-USERNAME.github.io/Dual-N-Back/terms-of-use.html';
   static const String feedbackEmail = 'feedback@example.com';
   static const String speedWarningTitle = 'Below scientific standards';
   static const String speedWarningMessage =

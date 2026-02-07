@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How to Play – Dual N-Back Pro</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <h1 class="site-title"><a href="index.html">Dual N-Back Pro</a></h1>
+      <nav>
+        <ul class="site-nav">
+          <li><a href="how-to-play.html">How to Play</a></li>
+          <li><a href="benefits.html">Benefits</a></li>
+          <li><a href="science.html">Science</a></li>
+          <li><a href="privacy-policy.html">Privacy Policy</a></li>
+          <li><a href="terms-of-use.html">Terms of Use</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <h1>How to Play</h1>
+
+    <p>Dual N-Back combines a <strong>position</strong> (one of 9 squares) and a <strong>letter</strong> (e.g. C, H, K) each turn. A match means: the current stimulus is the same as the one <em>N steps back</em>. Tap <strong>Position</strong> when the square matches; tap <strong>Audio</strong> when the letter matches. You can tap both if both match.</p>
+
+    <h2>The grid</h2>
+    <p>Each turn, a position appears in one of 9 squares (3×3 grid):</p>
+    <div class="nback-grid" aria-hidden="true">
+      <span>1</span><span>2</span><span>3</span>
+      <span>4</span><span class="highlight">5</span><span>6</span>
+      <span>7</span><span>8</span><span>9</span>
+    </div>
+    <p>The highlighted square is an example of where the stimulus might appear. At the same time you hear a letter. Your job is to detect when either the position or the letter (or both) matches the one from N steps ago.</p>
+
+    <h2>N=1: One step back</h2>
+    <p>For <strong>N=1</strong>, a match means: same as the <strong>previous</strong> turn (1 step back).</p>
+    <ul>
+      <li>Each turn you see a position (one of 9 squares) and hear a letter (C, H, K, …).</li>
+      <li>Tap <strong>Position</strong> (Visual Match) if the position is the same as last turn.</li>
+      <li>Tap <strong>Audio</strong> if the letter is the same as last turn.</li>
+      <li>You can tap both if both match. Don’t tap if neither matches.</li>
+    </ul>
+
+    <h2>N=2: Two steps back</h2>
+    <p>For <strong>N=2</strong>, a match means: same as <strong>2 turns ago</strong> (not the last turn).</p>
+    <ul>
+      <li>Same as N=1: each turn = one position + one letter.</li>
+      <li>Tap <strong>Position</strong> if the position matches 2 turns ago.</li>
+      <li>Tap <strong>Audio</strong> if the letter matches 2 turns ago.</li>
+      <li>Tap both if both match; don’t tap if neither matches.</li>
+    </ul>
+
+    <h2>Higher N levels</h2>
+    <p>At N=3 you match 3 steps back, and so on. The higher the N, the harder the task. In Dual N-Back Pro you can train at any N from 1 up to 15. We increase difficulty when you master the current level, and decrease when it’s too hard—so you stay in the flow.</p>
+
+    <h2>During a session</h2>
+    <p>Use <strong>Pause</strong> to pause, <strong>Resume</strong> to continue, and <strong>Quit</strong> to leave (you can resume later). At the end you’ll see your N-level, audio accuracy, visual accuracy, and overall accuracy. Your N-level may increase, decrease, or stay the same based on your performance.</p>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      © [Year] [Copyright holder]. All rights reserved.
+      <a href="privacy-policy.html">Privacy Policy</a> ·
+      <a href="terms-of-use.html">Terms of Use</a>
+    </div>
+  </footer>
+</body>
+</html>
