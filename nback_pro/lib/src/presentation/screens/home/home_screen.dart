@@ -147,9 +147,8 @@ class _DailyChallengeCardState extends State<_DailyChallengeCard> {
 
   int get _maxN => widget.highestN < 1 ? 1 : widget.highestN.clamp(1, 15);
 
-  int get _defaultN => widget.isAutoN
-      ? widget.currentN.clamp(1, _maxN)
-      : widget.manualN.clamp(1, _maxN);
+  /// Default to current level (highest N); user can tap − to go lower.
+  int get _defaultN => _maxN;
 
   @override
   void initState() {
@@ -160,10 +159,9 @@ class _DailyChallengeCardState extends State<_DailyChallengeCard> {
   @override
   void didUpdateWidget(covariant _DailyChallengeCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.isAutoN != widget.isAutoN ||
-        oldWidget.manualN != widget.manualN ||
-        oldWidget.currentN != widget.currentN) {
-      _selectedN = _defaultN;
+    // When current level (highestN) loads or increases, default selection to it.
+    if (widget.highestN > oldWidget.highestN) {
+      _selectedN = _maxN;
     } else {
       _selectedN = _selectedN.clamp(1, _maxN);
     }
@@ -256,20 +254,27 @@ class _DailyChallengeCardState extends State<_DailyChallengeCard> {
                         ),
                   ),
                   const SizedBox(width: 20),
-                  IconButton.filled(
-                    icon: const Icon(Icons.add),
-                    iconSize: 28,
-                    onPressed: _selectedN < maxN
-                        ? () => setState(() => _selectedN++)
-                        : null,
-                  ),
+                  _selectedN >= maxN
+                      ? Tooltip(
+                          message: AppStrings.dailyChallengePlusDisabled.replaceAll('%d', '$maxN'),
+                          child: IconButton.filled(
+                            icon: const Icon(Icons.add),
+                            iconSize: 28,
+                            onPressed: null,
+                          ),
+                        )
+                      : IconButton.filled(
+                          icon: const Icon(Icons.add),
+                          iconSize: 28,
+                          onPressed: () => setState(() => _selectedN++),
+                        ),
                 ],
               ),
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => widget.onStart(_selectedN),
+                  onPressed: () => widget.onStart(_selectedN.clamp(1, _maxN)),
                   child: const Text(AppStrings.start),
                 ),
               ),

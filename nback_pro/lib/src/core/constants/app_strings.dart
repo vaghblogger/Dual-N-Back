@@ -38,6 +38,8 @@ class AppStrings {
   static const String todayYouWillTrainOnN = 'Today you will train on N=%d';
   static const String dailyChallengeChooseLevelUpTo =
       'Choose level 1 to %d (your current max). You cannot advance to the next level from here.';
+  /// Tooltip when + is disabled: can't go above current level.
+  static const String dailyChallengePlusDisabled = "Can't go above your current level (N=%d)";
   static const String dailyChallengeCompleted = "You've completed today's challenge.";
   static const String dailyChallengeComeBackTomorrow = 'Come back tomorrow for your next challenge.';
   static const String trainYourBrain = 'Pro Training';
@@ -193,6 +195,8 @@ class AppStrings {
   static const String speed = 'Speed';
   static const String continuousFeedback = 'Continuous Feedback';
   static const String focusMusic = 'Focus Music';
+  static const String focusMusicHeadphonesTip =
+      'Use headphones or earbuds for the best experience.';
   static const String showGrid = 'Show grid';
   static const String showGridSubtitle =
       'Hide grid lines for harder focus and maximum cognitive training.';

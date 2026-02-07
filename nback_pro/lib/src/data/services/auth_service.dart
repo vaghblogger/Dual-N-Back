@@ -18,7 +18,7 @@ const String _kGoogleWebClientId = String.fromEnvironment(
   defaultValue: '',
 );
 
-const _kAuthChannel = MethodChannel('com.yourcompany.nback_pro/auth');
+const _kAuthChannel = MethodChannel('com.vaghblogger.nback_pro/auth');
 
 class AuthService {
   FirebaseAuth? _auth;

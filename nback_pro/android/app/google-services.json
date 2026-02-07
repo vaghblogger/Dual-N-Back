@@ -7,12 +7,49 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:964748668071:android:3982ee23561087b993bf82",
+        "android_client_info": {
+          "package_name": "com.vaghblogger.nback_pro"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "964748668071-859ilr4jej1mm3qgrfqfgieu06fep0ph.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAaLpVYIosTx2WRpOC9mXlWHYgIw3gzkFI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "964748668071-859ilr4jej1mm3qgrfqfgieu06fep0ph.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:964748668071:android:b03defd8b3401a0693bf82",
         "android_client_info": {
           "package_name": "com.yourcompany.nback_pro"
         }
       },
       "oauth_client": [
+        {
+          "client_id": "964748668071-dd20g9dta1gml1drtcun7bt4e3em5a3v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.yourcompany.nback_pro",
+            "certificate_hash": "6f539253ab09bc189c64897c4c44a1ca696b77e4"
+          }
+        },
         {
           "client_id": "964748668071-859ilr4jej1mm3qgrfqfgieu06fep0ph.apps.googleusercontent.com",
           "client_type": 3

@@ -1,4 +1,4 @@
-package com.yourcompany.nback_pro
+package com.vaghblogger.nback_pro
 
 import android.os.Bundle
 import io.flutter.embedding.android.FlutterActivity
@@ -7,7 +7,7 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
 
-    private val CHANNEL = "com.yourcompany.nback_pro/auth"
+    private val CHANNEL = "com.vaghblogger.nback_pro/auth"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

@@ -227,6 +227,16 @@ class _PreGameScreenState extends ConsumerState<PreGameScreen> {
                         ),
                   ),
                 ),
+                const SizedBox(height: 16),
+                Center(
+                  child: Text(
+                    AppStrings.focusMusicHeadphonesTip,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                ),
                 const Spacer(),
                 FilledButton.tonal(
                   onPressed: _skipMusic,
@@ -290,6 +300,16 @@ class _PreGameScreenState extends ConsumerState<PreGameScreen> {
                   'Play Music',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Center(
+                child: Text(
+                  AppStrings.focusMusicHeadphonesTip,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                 ),
               ),

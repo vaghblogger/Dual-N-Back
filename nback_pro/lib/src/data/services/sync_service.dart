@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/session_result.dart';
 import '../models/user_settings.dart';
@@ -114,6 +115,7 @@ class SyncService {
 
   // #region agent log
   static void _debugLog(String message, Map<String, dynamic> data, String hypothesisId) {
+    if (!kDebugMode) return;
     final payload = {
       'sessionId': 'debug-session',
       'hypothesisId': hypothesisId,
