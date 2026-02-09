@@ -92,7 +92,7 @@ class SimulatorRunnerNotifier extends StateNotifier<SimulatorRunnerState> {
   /// Builds permutation from options.
   /// [speeds]: which speed(s) to run (e.g. [1.0] or all speedOptions).
   /// [isAutoN]: true = Auto N (N changes by accuracy), false = My N (fixed N).
-  /// [nLevel]: for My N, the fixed N (1–15). Ignored when isAutoN is true.
+  /// [nLevel]: for My N, the fixed N (1–14). Ignored when isAutoN is true.
   /// [trialsPerSession]: override run length per session (null = use 20 + n).
   /// [autoNChainLength]: for Auto N, number of sessions per speed (N progression).
   void startSuite({
@@ -112,7 +112,7 @@ class SimulatorRunnerNotifier extends StateNotifier<SimulatorRunnerState> {
         }
       }
     } else {
-      final n = (nLevel ?? 1).clamp(1, 15);
+      final n = (nLevel ?? 1).clamp(1, 14);
       for (final speed in speeds) {
         runs.add(_RunConfig(n: n, speed: speed, isAutoN: false));
       }

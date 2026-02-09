@@ -3,6 +3,9 @@ import 'package:audioplayers/audioplayers.dart';
 class AudioService {
   final AudioPlayer _musicPlayer = AudioPlayer();
   final AudioPlayer _letterPlayer = AudioPlayer();
+  final AudioPlayer _tapPlayer = AudioPlayer();
+
+  bool _tapSourceLoaded = false;
 
   AudioService() {
     // Stop any previous focus music (e.g. after hot restart the old native
@@ -17,6 +20,33 @@ class AudioService {
       await _letterPlayer.setSource(AssetSource('audio/c.mp3'));
     } catch (_) {
       // Ignore preload failure; letter playback will still attempt per-letter.
+    }
+    try {
+      // Android: set context before source to avoid "Failed to set source" (see audioplayers#1786).
+      await _tapPlayer.setAudioContext(
+        AudioContext(
+          android: const AudioContextAndroid(
+            audioFocus: AndroidAudioFocus.gainTransientMayDuck,
+          ),
+        ),
+      );
+      await _tapPlayer.setPlayerMode(PlayerMode.lowLatency);
+      await _tapPlayer.setReleaseMode(ReleaseMode.stop);
+      await _tapPlayer.setSource(AssetSource('audio/click.mp3'));
+      _tapSourceLoaded = true;
+    } catch (_) {
+      // Ignore; tap sound is optional.
+    }
+  }
+
+  /// Play tap/click sound (e.g. when user taps match buttons). No-op if not enabled in settings.
+  Future<void> playTapSound() async {
+    if (!_tapSourceLoaded) return;
+    try {
+      await _tapPlayer.seek(Duration.zero);
+      await _tapPlayer.resume();
+    } catch (_) {
+      // Optional; ignore failure.
     }
   }
 
@@ -58,5 +88,6 @@ class AudioService {
   void dispose() {
     _musicPlayer.dispose();
     _letterPlayer.dispose();
+    _tapPlayer.dispose();
   }
 }

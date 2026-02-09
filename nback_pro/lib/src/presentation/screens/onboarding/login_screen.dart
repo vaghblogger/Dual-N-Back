@@ -36,37 +36,51 @@ class LoginScreen extends ConsumerWidget {
               SizedBox(
                 width: double.infinity,
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(minWidth: 280, minHeight: 56),
+                  constraints: BoxConstraints(
+                    minWidth: 280,
+                    minHeight: ResponsiveLayout.buttonMinHeight(context),
+                  ),
                   child: OutlinedButton.icon(
                     onPressed: () => _signInWithGoogle(context, ref),
-                    icon: const Icon(Icons.g_mobiledata, size: 28),
+                    icon: Icon(Icons.g_mobiledata, size: ResponsiveLayout.iconSizeMedium(context)),
                     label: const Text(AppStrings.signInWithGoogle),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      textStyle: const TextStyle(fontSize: 18),
+                      padding: EdgeInsets.symmetric(
+                        vertical: ResponsiveLayout.buttonVerticalPadding(context),
+                      ),
+                      textStyle: TextStyle(
+                        fontSize: ResponsiveLayout.scaledFontSize(context, 18),
+                      ),
                     ),
                   ),
                 ),
               ),
               if (Platform.isIOS) ...[
-                const SizedBox(height: 16),
+                SizedBox(height: ResponsiveLayout.spacing(context, 16)),
                 SizedBox(
                   width: double.infinity,
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(minWidth: 280, minHeight: 56),
+                    constraints: BoxConstraints(
+                      minWidth: 280,
+                      minHeight: ResponsiveLayout.buttonMinHeight(context),
+                    ),
                     child: OutlinedButton.icon(
                       onPressed: () => _signInWithApple(context, ref),
-                      icon: const Icon(Icons.apple, size: 28),
+                      icon: Icon(Icons.apple, size: ResponsiveLayout.iconSizeMedium(context)),
                       label: const Text(AppStrings.signInWithApple),
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        textStyle: const TextStyle(fontSize: 18),
+                        padding: EdgeInsets.symmetric(
+                          vertical: ResponsiveLayout.buttonVerticalPadding(context),
+                        ),
+                        textStyle: TextStyle(
+                          fontSize: ResponsiveLayout.scaledFontSize(context, 18),
+                        ),
                       ),
                     ),
                   ),
                 ),
               ],
-              const SizedBox(height: 16),
+              SizedBox(height: ResponsiveLayout.spacing(context, 16)),
               TextButton(
                 onPressed: () => _continueAsGuest(context, ref),
                 child: const Text(AppStrings.continueAsGuest),

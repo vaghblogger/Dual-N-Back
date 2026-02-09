@@ -169,6 +169,7 @@ class _PreGameScreenState extends ConsumerState<PreGameScreen> {
   @override
   Widget build(BuildContext context) {
     if (_showCountdown) {
+      final countdownSize = ResponsiveLayout.scaledFontSize(context, 120);
       return Scaffold(
         body: SafeArea(
           child: Center(
@@ -177,14 +178,14 @@ class _PreGameScreenState extends ConsumerState<PreGameScreen> {
                     'Go',
                     style: Theme.of(context).textTheme.displayLarge?.copyWith(
                           fontWeight: FontWeight.bold,
-                          fontSize: 120,
+                          fontSize: countdownSize,
                         ),
                   )
                 : Text(
                     _countdownValue != null ? '$_countdownValue' : '',
                     style: Theme.of(context).textTheme.displayLarge?.copyWith(
                           fontWeight: FontWeight.bold,
-                          fontSize: 120,
+                          fontSize: countdownSize,
                         ),
                   ),
           ),
@@ -193,6 +194,12 @@ class _PreGameScreenState extends ConsumerState<PreGameScreen> {
     }
 
     if (_musicPlaying) {
+      final pad = ResponsiveLayout.contentPadding(context);
+      final timerSize = ResponsiveLayout.scaledFontSize(context, 64);
+      final btnStyle = TextStyle(
+        fontSize: ResponsiveLayout.scaledFontSize(context, 17),
+        fontWeight: FontWeight.w500,
+      );
       return Scaffold(
         appBar: AppBar(
           title: const Text('Focus music'),
@@ -203,22 +210,22 @@ class _PreGameScreenState extends ConsumerState<PreGameScreen> {
         ),
         body: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: pad,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 32),
+                SizedBox(height: ResponsiveLayout.spacing(context, 32)),
                 Center(
                   child: Text(
                     _remainingLabel,
                     style: Theme.of(context).textTheme.displayLarge?.copyWith(
                           fontWeight: FontWeight.bold,
-                          fontSize: 64,
+                          fontSize: timerSize,
                           fontFeatures: [FontFeature.tabularFigures()],
                         ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: ResponsiveLayout.spacing(context, 16)),
                 Center(
                   child: Text(
                     'remaining',
@@ -227,7 +234,7 @@ class _PreGameScreenState extends ConsumerState<PreGameScreen> {
                         ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: ResponsiveLayout.spacing(context, 16)),
                 Center(
                   child: Text(
                     AppStrings.focusMusicHeadphonesTip,
@@ -241,12 +248,14 @@ class _PreGameScreenState extends ConsumerState<PreGameScreen> {
                 FilledButton.tonal(
                   onPressed: _skipMusic,
                   style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    minimumSize: const Size(double.infinity, 56),
+                    padding: EdgeInsets.symmetric(
+                      vertical: ResponsiveLayout.buttonVerticalPadding(context),
+                    ),
+                    minimumSize: Size(double.infinity, ResponsiveLayout.buttonMinHeight(context)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w500),
+                    textStyle: btnStyle,
                   ),
                   child: const Text('Skip to Training'),
                 ),
@@ -257,6 +266,8 @@ class _PreGameScreenState extends ConsumerState<PreGameScreen> {
       );
     }
 
+    final btnFontSize = ResponsiveLayout.scaledFontSize(context, 17);
+    final headlineSize = ResponsiveLayout.scaledFontSize(context, 32);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Get ready'),
@@ -271,7 +282,7 @@ class _PreGameScreenState extends ConsumerState<PreGameScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 24),
+              SizedBox(height: ResponsiveLayout.spacing(context, 24)),
               if (widget.fromDailyChallenge) ...[
                 Center(
                   child: Text(
@@ -279,11 +290,11 @@ class _PreGameScreenState extends ConsumerState<PreGameScreen> {
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                           fontWeight: FontWeight.bold,
-                          fontSize: 32,
+                          fontSize: headlineSize,
                         ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: ResponsiveLayout.spacing(context, 24)),
               ],
               Text(
                 _inspirationMessage,
@@ -294,7 +305,7 @@ class _PreGameScreenState extends ConsumerState<PreGameScreen> {
                       color: Theme.of(context).colorScheme.primary,
                     ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: ResponsiveLayout.spacing(context, 32)),
               Center(
                 child: Text(
                   'Play Music',
@@ -303,7 +314,7 @@ class _PreGameScreenState extends ConsumerState<PreGameScreen> {
                       ),
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: ResponsiveLayout.spacing(context, 8)),
               Center(
                 child: Text(
                   AppStrings.focusMusicHeadphonesTip,
@@ -313,7 +324,7 @@ class _PreGameScreenState extends ConsumerState<PreGameScreen> {
                       ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: ResponsiveLayout.spacing(context, 16)),
               ..._focusMusicDurations.map((seconds) {
                 final label = seconds == 60
                     ? '1 Min'
@@ -321,17 +332,19 @@ class _PreGameScreenState extends ConsumerState<PreGameScreen> {
                         ? '2 mins'
                         : '3 mins';
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
+                  padding: EdgeInsets.only(bottom: ResponsiveLayout.spacing(context, 12)),
                   child: FilledButton(
                     onPressed: () => _startFocusMusic(seconds),
                     style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      minimumSize: const Size(double.infinity, 56),
+                      padding: EdgeInsets.symmetric(
+                        vertical: ResponsiveLayout.buttonVerticalPadding(context),
+                      ),
+                      minimumSize: Size(double.infinity, ResponsiveLayout.buttonMinHeight(context)),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      textStyle: const TextStyle(
-                        fontSize: 17,
+                      textStyle: TextStyle(
+                        fontSize: btnFontSize,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -339,16 +352,18 @@ class _PreGameScreenState extends ConsumerState<PreGameScreen> {
                   ),
                 );
               }),
-              const SizedBox(height: 12),
+              SizedBox(height: ResponsiveLayout.spacing(context, 12)),
               TextButton(
                 onPressed: _skipToCountdown,
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  minimumSize: const Size(double.infinity, 56),
+                  padding: EdgeInsets.symmetric(
+                    vertical: ResponsiveLayout.buttonVerticalPadding(context),
+                  ),
+                  minimumSize: Size(double.infinity, ResponsiveLayout.buttonMinHeight(context)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w500),
+                  textStyle: TextStyle(fontSize: btnFontSize, fontWeight: FontWeight.w500),
                 ),
                 child: const Text('Skip to Training'),
               ),

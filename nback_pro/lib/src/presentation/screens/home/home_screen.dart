@@ -41,7 +41,7 @@ class HomeScreen extends ConsumerWidget {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.bar_chart),
-          iconSize: 36,
+          iconSize: ResponsiveLayout.iconSizeAppBar(context),
           onPressed: () => context.go('/stats'),
         ),
         title: Text(
@@ -53,12 +53,12 @@ class HomeScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.help_outline),
-            iconSize: 28,
+            iconSize: ResponsiveLayout.iconSizeMedium(context),
             onPressed: () => context.go('/tutorial'),
           ),
           IconButton(
             icon: const Icon(Icons.settings),
-            iconSize: 36,
+            iconSize: ResponsiveLayout.iconSizeAppBar(context),
             onPressed: () => context.go('/settings'),
           ),
         ],
@@ -68,7 +68,7 @@ class HomeScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: 16),
+            SizedBox(height: ResponsiveLayout.spacing(context, 16)),
             Text(
               AppStrings.currentNLevelDisplay.replaceAll('%d', '$highestN'),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -76,9 +76,9 @@ class HomeScreen extends ConsumerWidget {
                   ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: ResponsiveLayout.spacing(context, 24)),
             _WeeklyStreakCard(last7DaysAsync: last7DaysAsync),
-            const SizedBox(height: 24),
+            SizedBox(height: ResponsiveLayout.spacing(context, 24)),
             _DailyChallengeCard(
               currentN: currentN,
               highestN: highestN,
@@ -88,7 +88,7 @@ class HomeScreen extends ConsumerWidget {
               isCompleteTodayAsync: isCompleteTodayAsync,
               onStart: (n) => _startGame(context, ref, n),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: ResponsiveLayout.spacing(context, 24)),
             _TrainYourBrainCard(
               isPremium: ref.watch(isPremiumProvider),
               onTap: () {
@@ -100,10 +100,10 @@ class HomeScreen extends ConsumerWidget {
               },
             ),
             if (kDebugMode) ...[
-              const SizedBox(height: 24),
+              SizedBox(height: ResponsiveLayout.spacing(context, 24)),
               OutlinedButton.icon(
                 onPressed: () => context.go('/debug'),
-                icon: const Icon(Icons.bug_report, size: 20),
+                icon: Icon(Icons.bug_report, size: ResponsiveLayout.iconSizeSmall(context)),
                 label: const Text('Run simulator suite (Debug)'),
               ),
             ],
@@ -145,7 +145,7 @@ class _DailyChallengeCard extends StatefulWidget {
 class _DailyChallengeCardState extends State<_DailyChallengeCard> {
   late int _selectedN;
 
-  int get _maxN => widget.highestN < 1 ? 1 : widget.highestN.clamp(1, 15);
+  int get _maxN => widget.highestN < 1 ? 1 : widget.highestN.clamp(1, 14);
 
   /// Default to current level (highest N); user can tap − to go lower.
   int get _defaultN => _maxN;
@@ -174,7 +174,7 @@ class _DailyChallengeCardState extends State<_DailyChallengeCard> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(ResponsiveLayout.horizontalPadding(context)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -185,12 +185,12 @@ class _DailyChallengeCardState extends State<_DailyChallengeCard> {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 if (isComplete) ...[
-                  const SizedBox(width: 8),
-                  Icon(Icons.check_circle, color: Colors.green.shade700),
+                  SizedBox(width: ResponsiveLayout.spacing(context, 8)),
+                  Icon(Icons.check_circle, color: Colors.green.shade700, size: ResponsiveLayout.iconSizeMedium(context)),
                 ],
               ],
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: ResponsiveLayout.spacing(context, 8)),
             if (isComplete) ...[
               Text(
                 AppStrings.dailyChallengeCompleted,
@@ -198,7 +198,7 @@ class _DailyChallengeCardState extends State<_DailyChallengeCard> {
                       fontWeight: FontWeight.w500,
                     ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: ResponsiveLayout.spacing(context, 4)),
               Text(
                 AppStrings.dailyChallengeComeBackTomorrow,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -210,7 +210,7 @@ class _DailyChallengeCardState extends State<_DailyChallengeCard> {
                 AppStrings.maintainYourStreak,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: ResponsiveLayout.spacing(context, 4)),
               if (widget.isAutoN) ...[
                 Text(
                   AppStrings.recommendedN.replaceAll('%d', '${widget.currentN}'),
@@ -219,7 +219,7 @@ class _DailyChallengeCardState extends State<_DailyChallengeCard> {
                         fontWeight: FontWeight.w500,
                       ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: ResponsiveLayout.spacing(context, 4)),
               ],
               Text(
                 AppStrings.dailyChallengeChooseLevelUpTo
@@ -228,49 +228,49 @@ class _DailyChallengeCardState extends State<_DailyChallengeCard> {
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: ResponsiveLayout.spacing(context, 12)),
               Text(
                 AppStrings.dailyChallengeLevel,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
               ),
-              const SizedBox(height: 6),
+              SizedBox(height: ResponsiveLayout.spacing(context, 6)),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   IconButton.filled(
                     icon: const Icon(Icons.remove),
-                    iconSize: 28,
+                    iconSize: ResponsiveLayout.iconSizeMedium(context),
                     onPressed: _selectedN > 1
                         ? () => setState(() => _selectedN--)
                         : null,
                   ),
-                  const SizedBox(width: 20),
+                  SizedBox(width: ResponsiveLayout.spacing(context, 20)),
                   Text(
                     'N = $_selectedN',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                   ),
-                  const SizedBox(width: 20),
+                  SizedBox(width: ResponsiveLayout.spacing(context, 20)),
                   _selectedN >= maxN
                       ? Tooltip(
                           message: AppStrings.dailyChallengePlusDisabled.replaceAll('%d', '$maxN'),
                           child: IconButton.filled(
                             icon: const Icon(Icons.add),
-                            iconSize: 28,
+                            iconSize: ResponsiveLayout.iconSizeMedium(context),
                             onPressed: null,
                           ),
                         )
                       : IconButton.filled(
                           icon: const Icon(Icons.add),
-                          iconSize: 28,
+                          iconSize: ResponsiveLayout.iconSizeMedium(context),
                           onPressed: () => setState(() => _selectedN++),
                         ),
                 ],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: ResponsiveLayout.spacing(context, 12)),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -298,33 +298,34 @@ class _TrainYourBrainCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final pad = ResponsiveLayout.horizontalPadding(context);
 
     return Card(
       child: Stack(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(pad),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Row(
                   children: [
-                    Icon(Icons.fitness_center, size: 24, color: theme.colorScheme.onSurface),
-                    const SizedBox(width: 8),
+                    Icon(Icons.fitness_center, size: ResponsiveLayout.iconSizeMedium(context), color: theme.colorScheme.onSurface),
+                    SizedBox(width: ResponsiveLayout.spacing(context, 8)),
                     Text(
                       AppStrings.trainYourBrain,
                       style: theme.textTheme.titleLarge,
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: ResponsiveLayout.spacing(context, 8)),
                 Text(
                   AppStrings.trainYourBrainSubtitle,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: ResponsiveLayout.spacing(context, 12)),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -336,10 +337,13 @@ class _TrainYourBrainCard extends StatelessWidget {
             ),
           ),
           Positioned(
-            top: 12,
-            right: 12,
+            top: ResponsiveLayout.spacing(context, 12),
+            right: ResponsiveLayout.spacing(context, 12),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: EdgeInsets.symmetric(
+                horizontal: ResponsiveLayout.spacing(context, 8),
+                vertical: ResponsiveLayout.spacing(context, 4),
+              ),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -363,10 +367,10 @@ class _TrainYourBrainCard extends StatelessWidget {
                 children: [
                   Icon(
                     Icons.workspace_premium,
-                    size: 16,
+                    size: ResponsiveLayout.iconSizeSmall(context),
                     color: theme.colorScheme.onPrimary,
                   ),
-                  const SizedBox(width: 4),
+                  SizedBox(width: ResponsiveLayout.spacing(context, 4)),
                   Text(
                     'PRO',
                     style: theme.textTheme.labelSmall?.copyWith(

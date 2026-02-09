@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_strings.dart';
+import '../../../core/utils/responsive_layout.dart';
 import '../../../data/services/audio_service.dart';
 import 'miniature_grid_demo.dart';
 
@@ -347,7 +348,7 @@ class _GuidedDemoStepState extends State<GuidedDemoStep>
               ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: ResponsiveLayout.spacing(context, 20)),
         SizedBox(
           height: _gridAreaHeight,
           child: Stack(
@@ -416,7 +417,7 @@ class _GuidedDemoStepState extends State<GuidedDemoStep>
                             ),
                           ),
                           if (_feedbackText != null) ...[
-                            const SizedBox(height: 12),
+                            SizedBox(height: ResponsiveLayout.spacing(context, 12)),
                             Text(
                               _feedbackText!,
                               textAlign: TextAlign.center,
@@ -493,7 +494,13 @@ class _DemoButton extends StatelessWidget {
                 ? Theme.of(context).colorScheme.onPrimaryContainer
                 : null,
           ),
-          child: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: ResponsiveLayout.scaledFontSize(context, 16),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       ),
     );

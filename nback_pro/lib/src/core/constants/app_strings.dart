@@ -55,6 +55,21 @@ class AppStrings {
   static const String trainingTutorial = 'Training Tutorial';
   static const String stats = 'Stats';
   static const String settings = 'Settings';
+  static const String advancedSettings = 'Advanced settings';
+  static const String levelControls = 'Level controls';
+  static const String levelControlsSubtitle = 'Set your own n-back level after each round';
+  static const String autoNSubtitle = 'Automatically adjust N level after each round. When off, use My N below.';
+  static const String instantFeedback = 'Instant feedback';
+  static const String instantFeedbackSubtitle = 'See if you were right after each button tap';
+  static const String buttonPositions = 'Button positions';
+  static const String buttonPositionsSubtitle = 'Choose which match button is on the left.';
+  static const String positionLeftSoundRight = 'Position left, Sound right';
+  static const String soundLeftPositionRight = 'Sound left, Position right';
+  static const String nBackLevel = 'My N';
+  static const String resetScientificDefaults = 'Reset to scientific defaults';
+  static const String scientificDefaultsRestored = 'Scientific defaults restored';
+  static const String myNDisabledSubtitle = 'Turn off Auto N above to set your own N level.';
+  static const String advancedSettingsSubtitle = 'Level, feedback, speed, grid, and more.';
   static const String currentLevel = 'Current Level: N-Back %d';
   /// Display format for "Current N Level: X" (highest N achieved). Used on home, settings, Pro Training.
   static const String currentNLevelDisplay = 'Current N Level: %d';
@@ -73,6 +88,12 @@ class AppStrings {
   /// Pro Training (My N): message when N selection is disabled.
   static const String proTrainingMyNMessage =
       'Using your selected N level from Settings (My N). Change it in Settings to train at a different level.';
+  /// Pro Training message card when Auto N is on.
+  static const String proTrainingAutoNMessage =
+      'You have chosen Auto N mode so levels will increase, decrease or stay constant depending on your performance.';
+  /// Pro Training message card when Auto N is off (fixed N).
+  static const String proTrainingManualNMessage =
+      'You have chosen a fixed N level. It will stay the same for this session. Change it in Settings if needed.';
   /// Daily Challenge optional: "Recommended: N-Back X"
   static const String recommendedN = 'Recommended: N-Back %d';
 
@@ -119,7 +140,7 @@ class AppStrings {
       'Same idea, but the match is 2 steps back — not the last turn.';
   static const String tutorialHigherNTitle = 'Higher N levels';
   static const String tutorialHigherNBody =
-      'At N=3 you match 3 steps back, and so on. The higher the N, the harder the game. You can train at any N from 1 to 15.';
+      'At N=3 you match 3 steps back, and so on. The higher the N, the harder the game. You can train at any N from 1 to 14.';
   static const String tutorialReadyTitle = 'Ready??';
   static const String tutorialGo = 'Go';
   static const String tutorialSkip = 'I know how N-Back works';
@@ -180,6 +201,7 @@ class AppStrings {
   static const String nLevelMaintained = 'Your N-level has been maintained';
   static const String viewStats = 'View Stats';
   static const String playAgain = 'Play Again';
+  static const String nextSession = 'Next session';
   static const String home = 'Home';
   static const String resumeSessionTitle = 'Resume session?';
   static const String resumeSessionMessage =
@@ -189,6 +211,15 @@ class AppStrings {
 
   // Settings
   static const String dailyReminder = 'Daily Reminder';
+  static const String dailyReminderSubtitle = 'Set a time for your daily training reminder.';
+  static const String themeSubtitle = 'Choose light, dark, or system theme.';
+  static const String giveFeedbackSubtitle = 'Send us your suggestions or report issues.';
+  static const String privacyPolicySubtitle = 'Read our privacy policy.';
+  static const String termsOfUseSubtitle = 'Read our terms of use.';
+  static const String resetAppTitle = 'Reset app & data';
+  static const String resetAppSubtitle =
+      'Clear all data and return to first-run experience (for testing new installation).';
+  static const String versionSubtitle = 'App version and build.';
   static const String autoN = 'Auto N';
   static const String myN = 'My N';
   static const String myNSubtitle = 'Choose your own N level';
@@ -200,6 +231,9 @@ class AppStrings {
   static const String showGrid = 'Show grid';
   static const String showGridSubtitle =
       'Hide grid lines for harder focus and maximum cognitive training.';
+  static const String tapSound = 'Tap sound';
+  static const String tapSoundSubtitle =
+      'Play a click when you tap match buttons. Off by default for scientific consistency.';
   static const String theme = 'Theme';
   static const String giveFeedback = 'Give Feedback';
   static const String privacyPolicy = 'Privacy Policy';
@@ -228,7 +262,7 @@ class AppStrings {
   static const String willDoItLater = 'Will do it Later';
   static const String paywallBenefitsTitle = 'What you get with Pro';
   static const String paywallBenefitNoAds = 'Ad-free experience';
-  static const String paywallBenefitLevels = 'Train at N = 4–15 (higher levels)';
+  static const String paywallBenefitLevels = 'Train at N = 4–14 (higher levels)';
   static const String paywallBenefitUnlimited = 'Unlimited sessions per day';
   static const String paywallBenefitInsights =
       'Brain Insights: trends, heatmap, audio vs visual';

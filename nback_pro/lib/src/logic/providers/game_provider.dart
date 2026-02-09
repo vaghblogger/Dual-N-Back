@@ -65,7 +65,7 @@ class GameSessionNotifier extends StateNotifier<GameSessionState?> {
 
   final Ref _ref;
 
-  static const int _maxN = 15;
+  static const int _maxN = 14;
 
   /// [trialsPerSession] if set (e.g. simulator) overrides default 20 + n. Must be >= n + 1.
   void startSession(int n, {int? trialsPerSession}) {

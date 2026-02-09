@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/utils/responsive_layout.dart';
+
 /// A responsive row of 7 day cells (weekly streak). Each cell expands to fill
 /// available width so the layout adapts to small and large screens without overflow.
 class ResponsiveWeeklyStreakRow extends StatelessWidget {
@@ -15,6 +17,7 @@ class ResponsiveWeeklyStreakRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final today = DateTime.now();
+    final labelFontSize = ResponsiveLayout.scaledFontSize(context, 11);
 
     return Row(
       children: List.generate(7, (i) {
@@ -27,7 +30,8 @@ class ResponsiveWeeklyStreakRow extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final cellWidth = constraints.maxWidth;
-              final circleSize = cellWidth < 36 ? cellWidth : 36.0;
+              final baseCircle = ResponsiveLayout.spacing(context, 36);
+              final circleSize = cellWidth < baseCircle ? cellWidth : baseCircle;
               final iconSize = circleSize * (20 / 36);
 
               return Column(
@@ -56,13 +60,13 @@ class ResponsiveWeeklyStreakRow extends StatelessWidget {
                           )
                         : null,
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: ResponsiveLayout.spacing(context, 4)),
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
                       label,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        fontSize: 11,
+                        fontSize: labelFontSize,
                         fontWeight: isToday ? FontWeight.bold : null,
                       ),
                       textAlign: TextAlign.center,

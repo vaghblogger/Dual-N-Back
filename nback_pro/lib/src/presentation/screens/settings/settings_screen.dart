@@ -7,7 +7,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_strings.dart';
-import '../../../core/constants/settings_constants.dart';
 import '../../../core/utils/responsive_layout.dart';
 import '../../../data/models/subscription_state.dart';
 import '../../../data/services/app_reset_service.dart';
@@ -19,9 +18,12 @@ import '../../../logic/providers/stats_provider.dart';
 import '../../../logic/providers/subscription_provider.dart';
 import '../onboarding/theme_selection_screen.dart';
 import '../../widgets/paywall_dialog.dart';
+import '../../widgets/setting_card.dart';
 
 const String _keyPremiumAutoNDefaultApplied = 'premium_auto_n_default_applied';
 bool _premiumAutoNMigrationScheduled = false;
+
+const double _cardSpacing = 8;
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -59,314 +61,141 @@ class SettingsScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (settings) {
           final isPremium = ref.watch(isPremiumProvider);
-          final maxManualN = isPremium ? 15 : 1;
-          final displayN = (isPremium ? settings.manualN : 1).clamp(1, maxManualN);
           final isLoggedIn = currentUser != null;
           final user = currentUser;
           final accountSubtitle = isLoggedIn && user != null
               ? (user.email ?? user.displayName ?? 'Signed in')
               : AppStrings.loginToSaveProgress;
+          final theme = Theme.of(context);
           return ListView(
-            padding: ResponsiveLayout.contentPadding(context),
+            padding: EdgeInsets.fromLTRB(
+              ResponsiveLayout.horizontalPadding(context),
+              16,
+              ResponsiveLayout.horizontalPadding(context),
+              ResponsiveLayout.horizontalPadding(context),
+            ),
             children: [
-              Card(
-                child: InkWell(
-                  onTap: () {
-                    if (!isLoggedIn) {
-                      context.go('/login?from=settings');
-                    }
-                  },
-                  borderRadius: BorderRadius.circular(12),
-                  child: Padding(
-                    padding: ResponsiveLayout.contentPadding(context),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.person_outline,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                isLoggedIn
-                                    ? AppStrings.account
-                                    : AppStrings.notLoggedIn,
-                                style: Theme.of(context).textTheme.titleMedium
-                                    ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            if (isLoggedIn)
-                              TextButton(
-                                onPressed: () => _signOut(context, ref),
-                                child: Text(AppStrings.signOut),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          accountSubtitle,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme.onSurfaceVariant,
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
+              SettingCard(
+                leading: Icon(
+                  Icons.person_outline,
+                  color: theme.colorScheme.primary,
                 ),
+                title: isLoggedIn ? AppStrings.account : AppStrings.notLoggedIn,
+                subtitle: accountSubtitle,
+                trailing: isLoggedIn
+                    ? TextButton(
+                        onPressed: () => _signOut(context, ref),
+                        child: Text(AppStrings.signOut),
+                      )
+                    : const Icon(Icons.chevron_right),
+                onTap: isLoggedIn ? null : () => context.go('/login?from=settings'),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: _cardSpacing),
               if (!isPremium) ...[
-                Card(
-                  child: Padding(
-                    padding: ResponsiveLayout.contentPadding(context),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: Icon(
-                            Icons.block,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          title: Text(
-                            AppStrings.adFree,
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w600),
-                          ),
-                          subtitle: Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text(
-                              AppStrings.settingsAdFree,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme.onSurfaceVariant,
-                                  ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: FilledButton.icon(
-                            onPressed: () => showPaywallDialog(
-                                  context,
-                                  paywallContext: PaywallContext.progress,
-                                ),
-                            icon: const Icon(Icons.workspace_premium, size: 20),
-                            label: const Text(AppStrings.goPro),
-                          ),
-                        ),
-                      ],
+                SettingCard(
+                  leading: Icon(
+                    Icons.workspace_premium,
+                    color: theme.colorScheme.primary,
+                  ),
+                  title: AppStrings.adFree,
+                  subtitle: AppStrings.settingsAdFree,
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () => showPaywallDialog(
+                        context,
+                        paywallContext: PaywallContext.progress,
+                      ),
+                      icon: const Icon(Icons.workspace_premium, size: 20),
+                      label: const Text(AppStrings.goPro),
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: _cardSpacing),
               ],
-              ListTile(
-                title: const Text(AppStrings.dailyReminder),
-                trailing: Text(
-                  settings.reminderTime ?? 'Not set',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
-                ),
-                onTap: () async {
-                final time = await showTimePicker(
-                  context: context,
-                  initialTime: TimeOfDay.now(),
-                );
-                if (time != null && context.mounted) {
-                  final notificationService = ref.read(notificationServiceProvider);
-                  await notificationService.requestPermissions();
-                  if (!context.mounted) return;
-                  final iso = '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
-                  await ref.read(settingsProvider.notifier).setReminderTime(iso);
-                }
-              },
-            ),
-            SwitchListTile(
-              title: const Text(AppStrings.autoN),
-              value: isPremium ? settings.isAutoN : true,
-              onChanged: isPremium
-                  ? (_) =>
-                      ref.read(settingsProvider.notifier).toggleAutoN()
-                  : null,
-              subtitle: isPremium
-                  ? Text(
-                      'Adjusts N by performance. Turn off to use My N.',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    )
-                  : Text(
-                      'Unlock Pro to choose Auto N or My N.',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-            ),
-            ListTile(
-              title: const Text(AppStrings.myN),
-              subtitle: const Text(AppStrings.myNSubtitle),
-              enabled: true,
-              trailing: isPremium
-                  ? Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.remove),
-                          onPressed: !settings.isAutoN && displayN > 1
-                              ? () => ref.read(settingsProvider.notifier).setManualN(
-                                  (displayN - 1).clamp(1, maxManualN))
-                              : null,
-                        ),
-                        SizedBox(
-                          width: 48,
-                          child: Text(
-                            'N = $displayN',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.add),
-                          onPressed: !settings.isAutoN && displayN < maxManualN
-                              ? () => ref.read(settingsProvider.notifier).setManualN(
-                                  (displayN + 1).clamp(1, maxManualN))
-                              : null,
-                        ),
-                      ],
-                    )
-                  : Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.lock, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                        const SizedBox(width: 8),
-                        Text(
-                          'N = $displayN',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                      ],
-                    ),
-              onTap: !isPremium
-                  ? () => showPaywallDialog(context, paywallContext: PaywallContext.progress)
-                  : null,
-            ),
-            Builder(
-              builder: (context) {
-                if (!isPremium) {
-                  return ListTile(
-                    title: const Text(AppStrings.speed),
-                    subtitle: Text(
-                      AppStrings.speedDefaultMessage,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    trailing: Icon(Icons.lock, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                    onTap: () => showPaywallDialog(context, paywallContext: PaywallContext.progress),
-                  );
-                }
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              SettingCard(
+                title: AppStrings.dailyReminder,
+                subtitle: AppStrings.dailyReminderSubtitle,
+                trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        ResponsiveLayout.horizontalPadding(context),
-                        20,
-                        ResponsiveLayout.horizontalPadding(context),
-                        0,
-                      ),
-                      child: Text(
-                        AppStrings.speedDefaultMessage,
-                        style: Theme.of(context).textTheme.bodySmall,
+                    Text(
+                      settings.reminderTime ?? 'Not set',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    SliderListTile(
-                      title: AppStrings.speed,
-                      value: _speedIndex(settings.speedMultiplier).toDouble(),
-                  min: 0,
-                  max: 6,
-                  divisions: 6,
-                  label: _speedLabel(speedOptions[_speedIndex(settings.speedMultiplier)]),
-                  onChanged: (v) {
-                    final speed = speedOptions[v.round()];
-                    if (speed < 1.0) {
-                      _showWarning(
-                        context,
-                        AppStrings.speedWarningTitle,
-                        AppStrings.speedWarningMessage,
-                      );
-                    }
-                    ref.read(settingsProvider.notifier).setSpeedMultiplier(speed);
-                  },
-                ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.chevron_right),
                   ],
-                );
-              },
-            ),
-            SwitchListTile(
-              title: const Text(AppStrings.continuousFeedback),
-              value: settings.continuousFeedback,
-              onChanged: (value) {
-                if (value) {
-                  _showWarning(
-                    context,
-                    AppStrings.feedbackWarningTitle,
-                    AppStrings.feedbackWarningMessage,
+                ),
+                onTap: () async {
+                  final time = await showTimePicker(
+                    context: context,
+                    initialTime: TimeOfDay.now(),
                   );
-                }
-                ref.read(settingsProvider.notifier).setContinuousFeedback(value);
-              },
-            ),
-            SwitchListTile(
-              title: const Text(AppStrings.showGrid),
-              subtitle: const Text(AppStrings.showGridSubtitle),
-              value: settings.showGrid,
-              onChanged: (value) =>
-                  ref.read(settingsProvider.notifier).setShowGrid(value),
-            ),
-            ListTile(
-              title: const Text(AppStrings.theme),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const ThemeSelectionScreen(fromSettings: true),
+                  if (time != null && context.mounted) {
+                    final notificationService = ref.read(notificationServiceProvider);
+                    await notificationService.requestPermissions();
+                    if (!context.mounted) return;
+                    final iso = '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+                    await ref.read(settingsProvider.notifier).setReminderTime(iso);
+                  }
+                },
+              ),
+              const SizedBox(height: _cardSpacing),
+              SettingCard(
+                title: AppStrings.advancedSettings,
+                subtitle: AppStrings.advancedSettingsSubtitle,
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push('/settings/advanced'),
+              ),
+              const SizedBox(height: _cardSpacing),
+              SettingCard(
+                title: AppStrings.theme,
+                subtitle: AppStrings.themeSubtitle,
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const ThemeSelectionScreen(fromSettings: true),
+                  ),
                 ),
               ),
-            ),
-            ListTile(
-              title: const Text(AppStrings.giveFeedback),
-              onTap: () => launchUrl(Uri.parse('mailto:${AppStrings.feedbackEmail}')),
-            ),
-            ListTile(
-              title: const Text(AppStrings.privacyPolicy),
-              onTap: () => launchUrl(Uri.parse(AppStrings.privacyPolicyUrl)),
-            ),
-            ListTile(
-              title: const Text(AppStrings.termsOfUse),
-              onTap: () => launchUrl(Uri.parse(AppStrings.termsOfUseUrl)),
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: Icon(Icons.restart_alt, color: Theme.of(context).colorScheme.error),
-              title: Text(
-                'Reset app & data',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
-                  fontWeight: FontWeight.w600,
-                ),
+              const SizedBox(height: _cardSpacing),
+              SettingCard(
+                title: AppStrings.giveFeedback,
+                subtitle: AppStrings.giveFeedbackSubtitle,
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => launchUrl(Uri.parse('mailto:${AppStrings.feedbackEmail}')),
               ),
-              subtitle: const Text(
-                'Clear all data and return to first-run experience (for testing new installation)',
+              const SizedBox(height: _cardSpacing),
+              SettingCard(
+                title: AppStrings.privacyPolicy,
+                subtitle: AppStrings.privacyPolicySubtitle,
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => launchUrl(Uri.parse(AppStrings.privacyPolicyUrl)),
               ),
-              onTap: () => _showResetConfirmation(context, ref),
-            ),
-            const SizedBox(height: 8),
-            _VersionTapTile(),
-          ],
-        );
+              const SizedBox(height: _cardSpacing),
+              SettingCard(
+                title: AppStrings.termsOfUse,
+                subtitle: AppStrings.termsOfUseSubtitle,
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => launchUrl(Uri.parse(AppStrings.termsOfUseUrl)),
+              ),
+              const SizedBox(height: _cardSpacing),
+              _VersionCard(),
+              const SizedBox(height: _cardSpacing),
+              SettingCard(
+                leading: Icon(Icons.restart_alt, color: theme.colorScheme.error),
+                title: AppStrings.resetAppTitle,
+                subtitle: AppStrings.resetAppSubtitle,
+                isDestructive: true,
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _showResetConfirmation(context, ref),
+              ),
+              const SizedBox(height: 16),
+            ],
+          );
       },
     ),
   );
@@ -421,46 +250,15 @@ class SettingsScreen extends ConsumerWidget {
     context.go('/');
   }
 
-  int _speedIndex(double v) {
-    int best = 0;
-    for (int i = 0; i < speedOptions.length; i++) {
-      if ((speedOptions[i] - v).abs() < (speedOptions[best] - v).abs()) {
-        best = i;
-      }
-    }
-    return best;
-  }
-
-  String _speedLabel(double v) {
-    return v == v.truncateToDouble()
-        ? '${v.toInt()}x'
-        : '${v}x';
-  }
-
-  void _showWarning(BuildContext context, String title, String message) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
-/// Version row; in debug builds, tap 7 times to cycle dev subscription override.
-class _VersionTapTile extends ConsumerStatefulWidget {
+/// Version card; in debug builds, tap 7 times to cycle dev subscription override.
+class _VersionCard extends ConsumerStatefulWidget {
   @override
-  ConsumerState<_VersionTapTile> createState() => _VersionTapTileState();
+  ConsumerState<_VersionCard> createState() => _VersionCardState();
 }
 
-class _VersionTapTileState extends ConsumerState<_VersionTapTile> {
+class _VersionCardState extends ConsumerState<_VersionCard> {
   int _tapCount = 0;
   String _version = '';
 
@@ -474,8 +272,10 @@ class _VersionTapTileState extends ConsumerState<_VersionTapTile> {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      title: Text(_version.isEmpty ? 'Version' : 'Version $_version'),
+    return SettingCard(
+      title: 'Version',
+      subtitle: AppStrings.versionSubtitle,
+      trailing: _version.isNotEmpty ? Text(_version) : null,
       onTap: kDebugMode ? _onTap : null,
     );
   }
@@ -524,40 +324,3 @@ class _VersionTapTileState extends ConsumerState<_VersionTapTile> {
   }
 }
 
-class SliderListTile extends StatelessWidget {
-  const SliderListTile({
-    super.key,
-    required this.title,
-    required this.value,
-    required this.min,
-    required this.max,
-    required this.divisions,
-    this.label,
-    this.enabled = true,
-    this.onChanged,
-  });
-
-  final String title;
-  final double value;
-  final double min;
-  final double max;
-  final int divisions;
-  final String? label;
-  final bool enabled;
-  final void Function(double)? onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      title: Text(title),
-      subtitle: Slider(
-        value: value,
-        min: min,
-        max: max,
-        divisions: divisions,
-        label: label ?? value.toStringAsFixed(1),
-        onChanged: enabled ? onChanged : null,
-      ),
-    );
-  }
-}

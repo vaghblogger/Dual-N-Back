@@ -24,14 +24,16 @@ class UserSettingsAdapter extends TypeAdapter<UserSettings> {
       focusMusicEnabled: fields[4] as bool,
       reminderTime: fields[5] as String?,
       speedMultiplier: fields[6] as double,
-      showGrid: (fields[7] as bool?) ?? true,
+      showGrid: (fields[7] as bool?) ?? false,
+      tapSoundEnabled: (fields[8] as bool?) ?? false,
+      positionLeftAudioRight: (fields[9] as bool?) ?? true,
     );
   }
 
   @override
   void write(BinaryWriter writer, UserSettings obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(10)
       ..writeByte(0)
       ..write(obj.selectedThemeId)
       ..writeByte(1)
@@ -47,7 +49,11 @@ class UserSettingsAdapter extends TypeAdapter<UserSettings> {
       ..writeByte(6)
       ..write(obj.speedMultiplier)
       ..writeByte(7)
-      ..write(obj.showGrid);
+      ..write(obj.showGrid)
+      ..writeByte(8)
+      ..write(obj.tapSoundEnabled)
+      ..writeByte(9)
+      ..write(obj.positionLeftAudioRight);
   }
 
   @override

@@ -93,8 +93,12 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
     if (session.trials.isEmpty) return;
 
-    final overrides = ref.read(sessionOverridesProvider);
     final settings = ref.read(settingsProvider).valueOrNull;
+    if (settings?.tapSoundEnabled ?? false) {
+      _audioService?.playTapSound();
+    }
+
+    final overrides = ref.read(sessionOverridesProvider);
     final speedMultiplier =
         overrides?.speedMultiplier ?? settings?.speedMultiplier ?? 1.0;
     final trialDurationMs = (3000 / speedMultiplier).round();
@@ -344,11 +348,14 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           final updated = UserSettings(
             selectedThemeId: currentSettings.selectedThemeId,
             isAutoN: next.isAutoN,
-            manualN: next.n.clamp(1, 15),
+            manualN: next.n.clamp(1, 14),
             continuousFeedback: currentSettings.continuousFeedback,
             focusMusicEnabled: currentSettings.focusMusicEnabled,
             reminderTime: currentSettings.reminderTime,
             speedMultiplier: next.speed,
+            showGrid: currentSettings.showGrid,
+            tapSoundEnabled: currentSettings.tapSoundEnabled,
+            positionLeftAudioRight: currentSettings.positionLeftAudioRight,
           );
           await ref.read(settingsProvider.notifier).saveSettings(updated);
         }
@@ -466,6 +473,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     final continuousFeedback =
         ref.watch(settingsProvider).valueOrNull?.continuousFeedback ??
             false;
+    final positionLeftAudioRight =
+        ref.watch(settingsProvider).valueOrNull?.positionLeftAudioRight ?? true;
 
     return Scaffold(
       appBar: AppBar(
@@ -493,7 +502,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                   : 0,
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: EdgeInsets.symmetric(
+                vertical: ResponsiveLayout.spacing(context, 8),
+              ),
               child: Text(
                 AppStrings.trainingAtN.replaceAll(
                   '%d',
@@ -506,136 +517,266 @@ class _GameScreenState extends ConsumerState<GameScreen> {
               ),
             ),
             Expanded(
-              child: Center(
-                child: RepaintBoundary(
-                  child: AspectRatio(
-                    aspectRatio: 1,
-                    child: Padding(
-                      padding: EdgeInsets.all(ResponsiveLayout.gridPadding(context)),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          GridView.builder(
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 3,
-                              crossAxisSpacing: showGrid ? 2 : 0,
-                              mainAxisSpacing: showGrid ? 2 : 0,
-                            ),
-                            itemCount: 9,
-                            itemBuilder: (_, index) {
-                              final isActive = index == activePosition;
-                              return Container(
-                                decoration: BoxDecoration(
-                                  color: showGrid
-                                      ? (isActive
-                                          ? Theme.of(context)
-                                              .colorScheme.primary
-                                          : Theme.of(context).cardColor)
-                                      : (isActive
-                                          ? Theme.of(context)
-                                              .colorScheme.primary
-                                          : Colors.transparent),
-                                  border: showGrid
-                                      ? Border.all(
-                                          color: Theme.of(context)
-                                              .dividerColor
-                                              .withValues(alpha: 0.25),
-                                        )
-                                      : null,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final width = constraints.maxWidth;
+                  final maxHeight = constraints.maxHeight;
+                  final buttonSize = ResponsiveLayout.gameCircleButtonSize(context);
+                  final gap = ResponsiveLayout.gameCanvasToButtonGap(context);
+                  final bottomPad = ResponsiveLayout.buttonRowBottomPadding(context);
+                  final spaceForCanvas = maxHeight - gap - buttonSize - bottomPad;
+                  final canvasSide = (spaceForCanvas > 0 && width > 0)
+                      ? (spaceForCanvas < width ? spaceForCanvas : width).clamp(100.0, double.infinity)
+                      : width.clamp(100.0, double.infinity);
+
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        RepaintBoundary(
+                          child: SizedBox(
+                            width: canvasSide,
+                            height: canvasSide,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surfaceContainerLow,
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              child: Padding(
+                                padding: EdgeInsets.all(ResponsiveLayout.gameCanvasInnerPadding(context)),
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    GridView.builder(
+                                      gridDelegate:
+                                          SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 3,
+                                        crossAxisSpacing: showGrid ? 2 : 0,
+                                        mainAxisSpacing: showGrid ? 2 : 0,
+                                      ),
+                                      itemCount: 9,
+                                      itemBuilder: (_, index) {
+                                        final isActive = index == activePosition;
+                                        final theme = Theme.of(context);
+                                        final cellRadius = _gridCellBorderRadius(index);
+                                        return Container(
+                                          decoration: BoxDecoration(
+                                            color: showGrid
+                                                ? (isActive
+                                                    ? theme.colorScheme.primary
+                                                    : theme.cardColor)
+                                                : (isActive
+                                                    ? theme.colorScheme.primary
+                                                    : Colors.transparent),
+                                            borderRadius: cellRadius,
+                                            border: showGrid
+                                                ? Border.all(
+                                                    color: theme.dividerColor
+                                                        .withValues(alpha: 0.25),
+                                                  )
+                                                : null,
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    IgnorePointer(
+                                      child: Opacity(
+                                        opacity: 0.15,
+                                        child: Icon(
+                                          Icons.add,
+                                          size: ResponsiveLayout.gameGridCenterIconSize(context),
+                                          color: Theme.of(context).colorScheme.onSurface,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              );
-                            },
-                          ),
-                          IgnorePointer(
-                            child: Opacity(
-                              opacity: 0.15,
-                              child: Icon(
-                                Icons.add,
-                                size: ResponsiveLayout.gameGridCenterIconSize(context),
-                                color:
-                                    Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                        SizedBox(height: gap),
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: ResponsiveLayout.spacing(context, 32),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: positionLeftAudioRight
+                                ? [
+                                    _GameCircleButton(
+                                      size: buttonSize,
+                                      label: AppStrings.visualMatch,
+                                      enabled: !simulatorActive,
+                                      feedbackCorrect: continuousFeedback ? _feedbackVisual : null,
+                                      fontSize: ResponsiveLayout.buttonFontSize(context),
+                                      canvasColor: Theme.of(context).colorScheme.surfaceContainerLow,
+                                      onPressed: () => _onResponse(false, true),
+                                    ),
+                                    _GameCircleButton(
+                                      size: buttonSize,
+                                      label: AppStrings.audioMatch,
+                                      enabled: !simulatorActive,
+                                      feedbackCorrect: continuousFeedback ? _feedbackAudio : null,
+                                      fontSize: ResponsiveLayout.buttonFontSize(context),
+                                      canvasColor: Theme.of(context).colorScheme.surfaceContainerLow,
+                                      onPressed: () => _onResponse(true, false),
+                                    ),
+                                  ]
+                                : [
+                                    _GameCircleButton(
+                                      size: buttonSize,
+                                      label: AppStrings.audioMatch,
+                                      enabled: !simulatorActive,
+                                      feedbackCorrect: continuousFeedback ? _feedbackAudio : null,
+                                      fontSize: ResponsiveLayout.buttonFontSize(context),
+                                      canvasColor: Theme.of(context).colorScheme.surfaceContainerLow,
+                                      onPressed: () => _onResponse(true, false),
+                                    ),
+                                    _GameCircleButton(
+                                      size: buttonSize,
+                                      label: AppStrings.visualMatch,
+                                      enabled: !simulatorActive,
+                                      feedbackCorrect: continuousFeedback ? _feedbackVisual : null,
+                                      fontSize: ResponsiveLayout.buttonFontSize(context),
+                                      canvasColor: Theme.of(context).colorScheme.surfaceContainerLow,
+                                      onPressed: () => _onResponse(false, true),
+                                    ),
+                                  ],
+                          ),
+                        ),
+                        SizedBox(height: bottomPad),
+                      ],
                     ),
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                ResponsiveLayout.buttonRowHorizontalPadding(context),
-                0,
-                ResponsiveLayout.buttonRowHorizontalPadding(context),
-                ResponsiveLayout.buttonRowBottomPadding(context),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: simulatorActive
-                          ? null
-                          : () => _onResponse(true, false),
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(
-                          vertical: ResponsiveLayout.buttonVerticalPadding(context),
-                          horizontal: ResponsiveLayout.buttonHorizontalPadding(context),
-                        ),
-                        minimumSize: Size(0, ResponsiveLayout.buttonMinHeight(context)),
-                        textStyle: TextStyle(
-                          fontSize: ResponsiveLayout.buttonFontSize(context),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ).copyWith(
-                        side: continuousFeedback && _feedbackAudio != null
-                            ? WidgetStateProperty.all(BorderSide(
-                                color: _feedbackAudio!
-                                    ? Colors.green.shade300
-                                    : Colors.red.shade300,
-                                width: 2.5,
-                              ))
-                            : null,
-                      ),
-                      child: Text(AppStrings.audioMatch),
-                    ),
-                  ),
-                  SizedBox(width: ResponsiveLayout.buttonRowHorizontalPadding(context)),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: simulatorActive
-                          ? null
-                          : () => _onResponse(false, true),
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(
-                          vertical: ResponsiveLayout.buttonVerticalPadding(context),
-                          horizontal: ResponsiveLayout.buttonHorizontalPadding(context),
-                        ),
-                        minimumSize: Size(0, ResponsiveLayout.buttonMinHeight(context)),
-                        textStyle: TextStyle(
-                          fontSize: ResponsiveLayout.buttonFontSize(context),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ).copyWith(
-                        side: continuousFeedback &&
-                                _feedbackVisual != null
-                            ? WidgetStateProperty.all(BorderSide(
-                                color: _feedbackVisual!
-                                    ? Colors.green.shade300
-                                    : Colors.red.shade300,
-                                width: 2.5,
-                              ))
-                            : null,
-                      ),
-                      child: Text(AppStrings.visualMatch),
-                    ),
-                  ),
-                ],
+                  );
+                },
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Rounded corners for each cell of the 3x3 grid (indices 0–8). Corner cells get larger radius on outer edges.
+BorderRadius _gridCellBorderRadius(int index) {
+  const r = 8.0;
+  const rOuter = 12.0;
+  switch (index) {
+    case 0:
+      return BorderRadius.only(
+        topLeft: Radius.circular(rOuter),
+        topRight: Radius.circular(r),
+        bottomLeft: Radius.circular(r),
+        bottomRight: Radius.circular(r),
+      );
+    case 1:
+      return BorderRadius.circular(r);
+    case 2:
+      return BorderRadius.only(
+        topLeft: Radius.circular(r),
+        topRight: Radius.circular(rOuter),
+        bottomLeft: Radius.circular(r),
+        bottomRight: Radius.circular(r),
+      );
+    case 3:
+    case 4:
+    case 5:
+      return BorderRadius.circular(r);
+    case 6:
+      return BorderRadius.only(
+        topLeft: Radius.circular(r),
+        topRight: Radius.circular(r),
+        bottomLeft: Radius.circular(rOuter),
+        bottomRight: Radius.circular(r),
+      );
+    case 7:
+      return BorderRadius.circular(r);
+    case 8:
+      return BorderRadius.only(
+        topLeft: Radius.circular(r),
+        topRight: Radius.circular(r),
+        bottomLeft: Radius.circular(r),
+        bottomRight: Radius.circular(rOuter),
+      );
+    default:
+      return BorderRadius.circular(r);
+  }
+}
+
+/// Circular tap button for Audio/Visual match with optional light green/red border + text feedback.
+class _GameCircleButton extends StatelessWidget {
+  const _GameCircleButton({
+    required this.size,
+    required this.label,
+    required this.enabled,
+    required this.feedbackCorrect,
+    required this.fontSize,
+    required this.canvasColor,
+    required this.onPressed,
+  });
+
+  final double size;
+  final String label;
+  final bool enabled;
+  final bool? feedbackCorrect;
+  final double fontSize;
+  final Color canvasColor;
+  final VoidCallback onPressed;
+
+  /// Thicker border when showing instant feedback.
+  static const double _feedbackBorderWidth = 3.5;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bool? correct = feedbackCorrect;
+    final Color fillColor;
+    final Color? borderColor;
+    final Color textColor;
+    if (!enabled) {
+      fillColor = theme.colorScheme.surfaceContainerHighest;
+      borderColor = null;
+      textColor = theme.colorScheme.onSurfaceVariant;
+    } else if (correct == null) {
+      fillColor = canvasColor;
+      borderColor = null;
+      textColor = theme.colorScheme.onSurface;
+    } else {
+      fillColor = canvasColor;
+      borderColor = correct ? Colors.green.shade300 : Colors.red.shade300;
+      textColor = correct ? Colors.green.shade600 : Colors.red.shade600;
+    }
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Material(
+        color: fillColor,
+        shape: CircleBorder(
+          side: borderColor != null
+              ? BorderSide(color: borderColor, width: _feedbackBorderWidth)
+              : BorderSide.none,
+        ),
+        elevation: enabled ? 2 : 0,
+        child: InkWell(
+          onTap: enabled ? onPressed : null,
+          customBorder: const CircleBorder(),
+          child: Center(
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: fontSize,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
+            ),
+          ),
         ),
       ),
     );

@@ -28,6 +28,13 @@ class UserSettings extends HiveObject {
   @HiveField(7)
   bool showGrid;
 
+  @HiveField(8)
+  bool tapSoundEnabled;
+
+  /// When true: Position (Visual) left, Audio right. When false: Audio left, Position right.
+  @HiveField(9)
+  bool positionLeftAudioRight;
+
   UserSettings({
     this.selectedThemeId = 0,
     this.isAutoN = true,
@@ -36,7 +43,9 @@ class UserSettings extends HiveObject {
     this.focusMusicEnabled = false,
     this.reminderTime,
     this.speedMultiplier = 1.0,
-    this.showGrid = true,
+    this.showGrid = false,
+    this.tapSoundEnabled = false,
+    this.positionLeftAudioRight = true,
   });
 
   /// For Firestore sync: serialize to map (DateTime as ISO string).
@@ -50,6 +59,8 @@ class UserSettings extends HiveObject {
       'reminderTime': reminderTime,
       'speedMultiplier': speedMultiplier,
       'showGrid': showGrid,
+      'tapSoundEnabled': tapSoundEnabled,
+      'positionLeftAudioRight': positionLeftAudioRight,
     };
   }
 
@@ -64,7 +75,9 @@ class UserSettings extends HiveObject {
       focusMusicEnabled: map['focusMusicEnabled'] as bool? ?? false,
       reminderTime: map['reminderTime'] as String?,
       speedMultiplier: (map['speedMultiplier'] as num?)?.toDouble() ?? 1.0,
-      showGrid: map['showGrid'] as bool? ?? true,
+      showGrid: map['showGrid'] as bool? ?? false,
+      tapSoundEnabled: map['tapSoundEnabled'] as bool? ?? false,
+      positionLeftAudioRight: map['positionLeftAudioRight'] as bool? ?? true,
     );
   }
 }

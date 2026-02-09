@@ -3,7 +3,9 @@ import 'dart:math';
 import 'trial.dart';
 
 class NBackEngine {
-  final Random _random = Random();
+  NBackEngine([Random? random]) : _random = random ?? Random();
+
+  final Random _random;
   static const List<String> _letters = ['C', 'H', 'K', 'L', 'Q', 'R', 'S', 'T'];
 
   /// Generates a session with [totalTrials] (typically 20 + n).

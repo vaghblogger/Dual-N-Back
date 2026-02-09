@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/theme/app_theme.dart';
+import 'core/utils/adaptive_theme_wrapper.dart';
 import 'data/services/sync_service.dart';
 import 'logic/providers/audio_service_provider.dart';
 import 'logic/providers/auth_provider.dart';
@@ -78,6 +79,7 @@ class _NBackAppState extends ConsumerState<NBackApp> with WidgetsBindingObserver
       title: 'N-Back Pro',
       theme: AppTheme.getTheme(themeId),
       routerConfig: router,
+      builder: (context, child) => AdaptiveThemeWrapper(child: child),
     );
   }
 }

@@ -11,4 +11,10 @@ void main() {
       expect(theme.colorScheme.primary, isNotNull);
     }
   });
+
+  testWidgets('AppTheme out-of-range id returns default theme', (WidgetTester tester) async {
+    final defaultTheme = AppTheme.getTheme(0);
+    expect(AppTheme.getTheme(-1).scaffoldBackgroundColor, defaultTheme.scaffoldBackgroundColor);
+    expect(AppTheme.getTheme(99).scaffoldBackgroundColor, defaultTheme.scaffoldBackgroundColor);
+  });
 }

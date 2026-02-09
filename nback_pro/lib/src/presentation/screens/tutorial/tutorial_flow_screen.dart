@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_strings.dart';
+import '../../../core/utils/responsive_layout.dart';
 import '../../../data/services/audio_service.dart';
 import '../../../logic/providers/audio_service_provider.dart';
 import '../../../logic/providers/onboarding_provider.dart';
@@ -114,7 +115,7 @@ class _TutorialFlowScreenState extends ConsumerState<TutorialFlowScreen> {
         title: Text('${AppStrings.helpHubTitle} — $_currentStep/10'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(ResponsiveLayout.spacing(context, 24)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -123,9 +124,9 @@ class _TutorialFlowScreenState extends ConsumerState<TutorialFlowScreen> {
                 child: _buildStepContent(context, audioService),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: ResponsiveLayout.spacing(context, 16)),
             Padding(
-              padding: const EdgeInsets.only(bottom: 24),
+              padding: EdgeInsets.only(bottom: ResponsiveLayout.spacing(context, 24)),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -156,15 +157,18 @@ class _TutorialFlowScreenState extends ConsumerState<TutorialFlowScreen> {
                         ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: ResponsiveLayout.spacing(context, 12)),
                   // Full-width: [I know how N-Back works]
                   SizedBox(
                     width: double.infinity,
-                    height: 52,
+                    height: ResponsiveLayout.buttonMinHeight(context),
                     child: OutlinedButton(
                       onPressed: _onSkip,
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                        padding: EdgeInsets.symmetric(
+                          vertical: ResponsiveLayout.spacing(context, 14),
+                          horizontal: ResponsiveLayout.spacing(context, 20),
+                        ),
                       ),
                       child: Text(AppStrings.tutorialSkip),
                     ),
@@ -279,12 +283,14 @@ class _TutorialFlowScreenState extends ConsumerState<TutorialFlowScreen> {
       case 10:
         return Center(
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 32),
+            padding: EdgeInsets.symmetric(
+              vertical: ResponsiveLayout.spacing(context, 32),
+            ),
             child: Text(
               AppStrings.tutorialReadyTitle,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    fontSize: 28,
+                    fontSize: ResponsiveLayout.scaledFontSize(context, 28),
                   ),
               textAlign: TextAlign.center,
             ),
@@ -303,7 +309,7 @@ class _TutorialFlowScreenState extends ConsumerState<TutorialFlowScreen> {
     final titleStyle = largeText
         ? Theme.of(context).textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              fontSize: 28,
+              fontSize: ResponsiveLayout.scaledFontSize(context, 28),
             )
         : Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
@@ -311,14 +317,14 @@ class _TutorialFlowScreenState extends ConsumerState<TutorialFlowScreen> {
     final bodyStyle = largeText
         ? Theme.of(context).textTheme.titleLarge?.copyWith(
               height: 1.5,
-              fontSize: 22,
+              fontSize: ResponsiveLayout.scaledFontSize(context, 22),
             )
         : Theme.of(context).textTheme.titleMedium?.copyWith(
               height: 1.5,
             );
     return Padding(
       padding: EdgeInsets.symmetric(
-        vertical: largeText ? 24 : 16,
+        vertical: ResponsiveLayout.spacing(context, largeText ? 24 : 16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -328,7 +334,7 @@ class _TutorialFlowScreenState extends ConsumerState<TutorialFlowScreen> {
             style: titleStyle,
             textAlign: TextAlign.center,
           ),
-          SizedBox(height: largeText ? 32 : 24),
+          SizedBox(height: ResponsiveLayout.spacing(context, largeText ? 32 : 24)),
           Text(
             body,
             style: bodyStyle,
@@ -351,17 +357,17 @@ class _NavButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final bool emphasized;
 
-  static const _fontSize = 17.0;
-  static const _minHeight = 52.0;
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final style = ElevatedButton.styleFrom(
-      minimumSize: const Size(0, _minHeight),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      minimumSize: Size(0, ResponsiveLayout.buttonMinHeight(context)),
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsiveLayout.spacing(context, 20),
+        vertical: ResponsiveLayout.spacing(context, 14),
+      ),
       textStyle: TextStyle(
-        fontSize: _fontSize,
+        fontSize: ResponsiveLayout.scaledFontSize(context, 17),
         fontWeight: emphasized ? FontWeight.bold : FontWeight.w600,
         letterSpacing: emphasized ? 0.5 : 0.2,
       ),

@@ -39,6 +39,8 @@ class SettingsNotifier extends AsyncNotifier<UserSettings> {
         reminderTime: settings.reminderTime,
         speedMultiplier: snapped,
         showGrid: settings.showGrid,
+        tapSoundEnabled: settings.tapSoundEnabled,
+        positionLeftAudioRight: settings.positionLeftAudioRight,
       );
       await repo.saveSettings(updated);
       return updated;
@@ -58,6 +60,8 @@ class SettingsNotifier extends AsyncNotifier<UserSettings> {
       reminderTime: settings.reminderTime,
       speedMultiplier: settings.speedMultiplier,
       showGrid: settings.showGrid,
+      tapSoundEnabled: settings.tapSoundEnabled,
+      positionLeftAudioRight: settings.positionLeftAudioRight,
     );
     await ref.read(settingsRepositoryProvider).saveSettings(updated);
     await _pushSettingsIfSignedIn(updated);
@@ -89,6 +93,8 @@ class SettingsNotifier extends AsyncNotifier<UserSettings> {
       reminderTime: settings.reminderTime,
       speedMultiplier: settings.speedMultiplier,
       showGrid: settings.showGrid,
+      tapSoundEnabled: settings.tapSoundEnabled,
+      positionLeftAudioRight: settings.positionLeftAudioRight,
     );
     await ref.read(settingsRepositoryProvider).saveSettings(updated);
     await _pushSettingsIfSignedIn(updated);
@@ -107,6 +113,8 @@ class SettingsNotifier extends AsyncNotifier<UserSettings> {
       reminderTime: settings.reminderTime,
       speedMultiplier: settings.speedMultiplier,
       showGrid: settings.showGrid,
+      tapSoundEnabled: settings.tapSoundEnabled,
+      positionLeftAudioRight: settings.positionLeftAudioRight,
     );
     await ref.read(settingsRepositoryProvider).saveSettings(updated);
     await _pushSettingsIfSignedIn(updated);
@@ -122,12 +130,14 @@ class SettingsNotifier extends AsyncNotifier<UserSettings> {
     final updated = UserSettings(
       selectedThemeId: settings.selectedThemeId,
       isAutoN: settings.isAutoN,
-      manualN: n.clamp(1, 15),
+      manualN: n.clamp(1, 14),
       continuousFeedback: settings.continuousFeedback,
       focusMusicEnabled: settings.focusMusicEnabled,
       reminderTime: settings.reminderTime,
       speedMultiplier: settings.speedMultiplier,
       showGrid: settings.showGrid,
+      tapSoundEnabled: settings.tapSoundEnabled,
+      positionLeftAudioRight: settings.positionLeftAudioRight,
     );
     await ref.read(settingsRepositoryProvider).saveSettings(updated);
     await _pushSettingsIfSignedIn(updated);
@@ -149,6 +159,8 @@ class SettingsNotifier extends AsyncNotifier<UserSettings> {
       reminderTime: settings.reminderTime,
       speedMultiplier: multiplier,
       showGrid: settings.showGrid,
+      tapSoundEnabled: settings.tapSoundEnabled,
+      positionLeftAudioRight: settings.positionLeftAudioRight,
     );
     await ref.read(settingsRepositoryProvider).saveSettings(updated);
     await _pushSettingsIfSignedIn(updated);
@@ -167,6 +179,8 @@ class SettingsNotifier extends AsyncNotifier<UserSettings> {
       reminderTime: settings.reminderTime,
       speedMultiplier: settings.speedMultiplier,
       showGrid: settings.showGrid,
+      tapSoundEnabled: settings.tapSoundEnabled,
+      positionLeftAudioRight: settings.positionLeftAudioRight,
     );
     await ref.read(settingsRepositoryProvider).saveSettings(updated);
     await _pushSettingsIfSignedIn(updated);
@@ -185,6 +199,8 @@ class SettingsNotifier extends AsyncNotifier<UserSettings> {
       reminderTime: settings.reminderTime,
       speedMultiplier: settings.speedMultiplier,
       showGrid: settings.showGrid,
+      tapSoundEnabled: settings.tapSoundEnabled,
+      positionLeftAudioRight: settings.positionLeftAudioRight,
     );
     await ref.read(settingsRepositoryProvider).saveSettings(updated);
     await _pushSettingsIfSignedIn(updated);
@@ -203,6 +219,8 @@ class SettingsNotifier extends AsyncNotifier<UserSettings> {
       reminderTime: isoTime,
       speedMultiplier: settings.speedMultiplier,
       showGrid: settings.showGrid,
+      tapSoundEnabled: settings.tapSoundEnabled,
+      positionLeftAudioRight: settings.positionLeftAudioRight,
     );
     await ref.read(settingsRepositoryProvider).saveSettings(updated);
     await _pushSettingsIfSignedIn(updated);
@@ -221,9 +239,73 @@ class SettingsNotifier extends AsyncNotifier<UserSettings> {
       reminderTime: settings.reminderTime,
       speedMultiplier: settings.speedMultiplier,
       showGrid: value,
+      tapSoundEnabled: settings.tapSoundEnabled,
+      positionLeftAudioRight: settings.positionLeftAudioRight,
     );
     await ref.read(settingsRepositoryProvider).saveSettings(updated);
     await _pushSettingsIfSignedIn(updated);
     state = AsyncData(updated);
+  }
+
+  Future<void> setTapSoundEnabled(bool value) async {
+    final settings = state.value;
+    if (settings == null) return;
+    final updated = UserSettings(
+      selectedThemeId: settings.selectedThemeId,
+      isAutoN: settings.isAutoN,
+      manualN: settings.manualN,
+      continuousFeedback: settings.continuousFeedback,
+      focusMusicEnabled: settings.focusMusicEnabled,
+      reminderTime: settings.reminderTime,
+      speedMultiplier: settings.speedMultiplier,
+      showGrid: settings.showGrid,
+      tapSoundEnabled: value,
+      positionLeftAudioRight: settings.positionLeftAudioRight,
+    );
+    await ref.read(settingsRepositoryProvider).saveSettings(updated);
+    await _pushSettingsIfSignedIn(updated);
+    state = AsyncData(updated);
+  }
+
+  Future<void> setPositionLeftAudioRight(bool value) async {
+    final settings = state.value;
+    if (settings == null) return;
+    final updated = UserSettings(
+      selectedThemeId: settings.selectedThemeId,
+      isAutoN: settings.isAutoN,
+      manualN: settings.manualN,
+      continuousFeedback: settings.continuousFeedback,
+      focusMusicEnabled: settings.focusMusicEnabled,
+      reminderTime: settings.reminderTime,
+      speedMultiplier: settings.speedMultiplier,
+      showGrid: settings.showGrid,
+      tapSoundEnabled: settings.tapSoundEnabled,
+      positionLeftAudioRight: value,
+    );
+    await ref.read(settingsRepositoryProvider).saveSettings(updated);
+    await _pushSettingsIfSignedIn(updated);
+    state = AsyncData(updated);
+  }
+
+  /// Restore training-related settings to science-backed defaults. Does not change theme, reminder, focus music, or account data.
+  Future<void> resetScientificDefaults() async {
+    final settings = state.value;
+    if (settings == null) return;
+    final updated = UserSettings(
+      selectedThemeId: settings.selectedThemeId,
+      isAutoN: true,
+      manualN: 2,
+      continuousFeedback: false,
+      focusMusicEnabled: settings.focusMusicEnabled,
+      reminderTime: settings.reminderTime,
+      speedMultiplier: 1.0,
+      showGrid: false,
+      tapSoundEnabled: false,
+      positionLeftAudioRight: true,
+    );
+    await ref.read(settingsRepositoryProvider).saveSettings(updated);
+    await _pushSettingsIfSignedIn(updated);
+    state = AsyncData(updated);
+    ref.read(currentNProvider.notifier).state = 2;
   }
 }

@@ -1174,7 +1174,7 @@ class _HeatmapGrid extends StatelessWidget {
         if (n > maxN) maxN = n;
       }
     }
-    maxN = maxN.clamp(1, 15);
+    maxN = maxN.clamp(1, 14);
     double maxAcc = 0.0;
     for (final row in heatmap.values) {
       for (final acc in row.values) {

@@ -8,6 +8,7 @@ import '../../presentation/screens/home/home_screen.dart';
 import '../../presentation/screens/paywall/paywall_screen.dart';
 import '../../presentation/screens/pre_game/pre_game_screen.dart';
 import '../../presentation/screens/onboarding/login_screen.dart';
+import '../../presentation/screens/settings/advanced_settings_screen.dart';
 import '../../presentation/screens/settings/settings_screen.dart';
 import '../../presentation/screens/session_summary/session_summary_screen.dart';
 import '../../presentation/screens/statistics/stats_screen.dart';
@@ -122,7 +123,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           final map = extra is Map ? extra as Map<Object?, Object?> : null;
           final n = map != null ? (map['n'] as int?) ?? 1 : 1;
           final fromDailyChallenge = map != null && (map['fromDailyChallenge'] == true);
-          return PreGameScreen(n: n.clamp(1, 15), fromDailyChallenge: fromDailyChallenge);
+          return PreGameScreen(n: n.clamp(1, 14), fromDailyChallenge: fromDailyChallenge);
         },
       ),
       GoRoute(
@@ -140,6 +141,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings',
         builder: (context, _) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/settings/advanced',
+        builder: (context, _) => const AdvancedSettingsScreen(),
       ),
       GoRoute(
         path: '/stats',

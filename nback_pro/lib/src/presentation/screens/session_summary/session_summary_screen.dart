@@ -40,7 +40,7 @@ class SessionSummaryScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 24),
+              SizedBox(height: ResponsiveLayout.spacing(context, 24)),
               Text(
                 AppStrings.sessionComplete,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -48,11 +48,14 @@ class SessionSummaryScreen extends ConsumerWidget {
                     ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: ResponsiveLayout.spacing(context, 16)),
               Card(
                 margin: EdgeInsets.zero,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: ResponsiveLayout.spacing(context, 20),
+                    vertical: ResponsiveLayout.spacing(context, 20),
+                  ),
                   child: Text(
                     motivationalMessage,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -63,7 +66,7 @@ class SessionSummaryScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: ResponsiveLayout.spacing(context, 24)),
               Text(
                 AppStrings.sessionResults,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -71,24 +74,24 @@ class SessionSummaryScreen extends ConsumerWidget {
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: ResponsiveLayout.spacing(context, 12)),
               Text(
                 AppStrings.nLevel.replaceAll('%d', '${data.nLevel}'),
                 style: Theme.of(context).textTheme.titleLarge,
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: ResponsiveLayout.spacing(context, 12)),
               Text(
                 AppStrings.audioAccuracy
                     .replaceAll('%d', '${(data.audioScore * 100).round()}'),
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
-              const SizedBox(height: 6),
+              SizedBox(height: ResponsiveLayout.spacing(context, 6)),
               Text(
                 AppStrings.visualAccuracy
                     .replaceAll('%d', '${(data.visualScore * 100).round()}'),
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
-              const SizedBox(height: 6),
+              SizedBox(height: ResponsiveLayout.spacing(context, 6)),
               Text(
                 AppStrings.overallAccuracy
                     .replaceAll('%d', '${(data.totalAccuracy * 100).round()}'),
@@ -97,7 +100,7 @@ class SessionSummaryScreen extends ConsumerWidget {
                     ),
               ),
               if (data.isAutoN) ...[
-                const SizedBox(height: 8),
+                SizedBox(height: ResponsiveLayout.spacing(context, 8)),
                 Text(
                   nMessage,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -105,10 +108,24 @@ class SessionSummaryScreen extends ConsumerWidget {
                       ),
                 ),
               ],
-              const SizedBox(height: 32),
+              SizedBox(height: ResponsiveLayout.spacing(context, 32)),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
+                  onPressed: () {
+                    // Navigate first so summary does not see null and redirect to home.
+                    context.go('/train');
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      ref.read(lastSessionSummaryProvider.notifier).state = null;
+                    });
+                  },
+                  child: const Text(AppStrings.nextSession),
+                ),
+              ),
+              SizedBox(height: ResponsiveLayout.spacing(context, 12)),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
                   onPressed: () {
                     ref.read(lastSessionSummaryProvider.notifier).state = null;
                     context.go('/home');
@@ -116,7 +133,7 @@ class SessionSummaryScreen extends ConsumerWidget {
                   child: const Text(AppStrings.home),
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: ResponsiveLayout.spacing(context, 24)),
             ],
           ),
         ),

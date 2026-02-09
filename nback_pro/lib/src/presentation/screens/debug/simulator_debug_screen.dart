@@ -55,7 +55,7 @@ class _SimulatorDebugScreenState extends ConsumerState<SimulatorDebugScreen> {
     int? nLevel;
     if (!_isAutoN) {
       final n = int.tryParse(_nLevelController.text.trim()) ?? 1;
-      nLevel = n.clamp(1, 15);
+      nLevel = n.clamp(1, 14);
     }
 
     final k = int.tryParse(_kController.text) ?? 10;
@@ -79,11 +79,14 @@ class _SimulatorDebugScreenState extends ConsumerState<SimulatorDebugScreen> {
       final updated = UserSettings(
         selectedThemeId: currentSettings.selectedThemeId,
         isAutoN: config.isAutoN,
-        manualN: config.n.clamp(1, 15),
+        manualN: config.n.clamp(1, 14),
         continuousFeedback: currentSettings.continuousFeedback,
         focusMusicEnabled: currentSettings.focusMusicEnabled,
         reminderTime: currentSettings.reminderTime,
         speedMultiplier: config.speed,
+        showGrid: currentSettings.showGrid,
+        tapSoundEnabled: currentSettings.tapSoundEnabled,
+        positionLeftAudioRight: currentSettings.positionLeftAudioRight,
       );
       await ref.read(settingsProvider.notifier).saveSettings(updated);
     }
@@ -201,7 +204,7 @@ class _SimulatorDebugScreenState extends ConsumerState<SimulatorDebugScreen> {
               const SizedBox(height: 16),
               if (!_isAutoN) ...[
                 Text(
-                  'N level (1–15)',
+                  'N level (1–14)',
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 const SizedBox(height: 4),
